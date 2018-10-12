@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cy.agorise.graphenej.RPC;
+import cy.agorise.graphenej.UserAccount;
 import cy.agorise.graphenej.api.ApiAccess;
 import cy.agorise.graphenej.models.ApiCall;
 
@@ -17,6 +18,16 @@ public class GetFullAccounts implements ApiCallable {
 
     private List<String> mUserAccounts;
     private boolean mSubscribe;
+
+    public GetFullAccounts(UserAccount userAccount, boolean subscribe){
+        this.mUserAccounts = new ArrayList<>();
+        if(userAccount.getName() != null && !userAccount.getName().equals("")){
+            this.mUserAccounts.add(userAccount.getName());
+        }else{
+            this.mUserAccounts.add(userAccount.getObjectId());
+        }
+        this.mSubscribe = subscribe;
+    }
 
     public GetFullAccounts(List<String> accounts, boolean subscribe){
         this.mUserAccounts = accounts;
