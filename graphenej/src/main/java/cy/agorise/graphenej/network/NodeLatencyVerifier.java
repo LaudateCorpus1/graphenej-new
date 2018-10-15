@@ -35,8 +35,6 @@ public class NodeLatencyVerifier {
 
     private HashMap<HttpUrl, FullNode> nodeURLMap = new HashMap<>();
 
-//    private WebSocket webSocket;
-
     // Map used to store the first timestamp required for a RTT (Round Trip Time) measurement.
     // If:
     //      RTT = t2 - t1
@@ -104,11 +102,10 @@ public class NodeLatencyVerifier {
                 }
 
                 String normalURL = fullNode.getUrl().replace("wss://", "https://");
-                if(!nodeURLMap.containsKey(fullNode.getUrl().replace("wss://", "https://"))){
-                    HttpUrl key = HttpUrl.parse(normalURL);
+                HttpUrl key = HttpUrl.parse(normalURL);
+                if(!nodeURLMap.containsKey(key)){
                     nodeURLMap.put(key, fullNode);
                 }
-
                 client.newWebSocket(request, mWebSocketListener);
             }
             mHandler.postDelayed(this, verificationPeriod);
@@ -135,38 +132,43 @@ public class NodeLatencyVerifier {
          * Method used to handle the node's first response. The idea here is to obtain
          * the RTT (Round Trip Time) measurement and publish it using the PublishSubject.
          *
-         * @param webSocket Websocket instance
+         * @param webSocket WebSocket instance
          * @param response  Response instance
          */
         private void handleResponse(WebSocket webSocket, Response response){
-            // Obtaining the HttpUrl instance that was previously used as a key
-            HttpUrl url = webSocket.request().url();
-            if(nodeURLMap.containsKey(url)){
-                FullNode fullNode = nodeURLMap.get(url);
-                long delay;
+            synchronized (this){
+                // Obtaining the HttpUrl instance that was previously used as a key
+                HttpUrl url = webSocket.request().url();
+                if(nodeURLMap.containsKey(url)){
+                    FullNode fullNode = nodeURLMap.get(url);
+                    long delay;
 
-                if(response == null) {
-                    // There is no internet connection, or the node is unreachable. We are just
-                    // putting an artificial delay.
-                    delay = Long.MAX_VALUE;
-                } else {
-                    long after = System.currentTimeMillis();
-                    long before = timestamps.get(fullNode);
-                    delay = after - before;
+                    if(response == null) {
+                        // There is no internet connection, or the node is unreachable. We are just
+                        // putting an artificial delay.
+                        delay = Long.MAX_VALUE;
+                    } else {
+                        long after = System.currentTimeMillis();
+                        long before = timestamps.get(fullNode);
+                        delay = after - before;
+                    }
+                    if(fullNode != null){
+                        fullNode.addLatencyValue(delay);
+                        subject.onNext(fullNode);
+                    }else{
+                        Log.w(TAG,"Could not extract FullNode instance from the map");
+                    }
+                }else{
+                    // We cannot properly handle a response to a request whose
+                    // URL was not registered at the nodeURLMap. This is because without this,
+                    // we cannot know to which node this response corresponds. This should not happen.
+                    Log.e(TAG,"nodeURLMap does not contain url: "+url);
+                    for(HttpUrl key : nodeURLMap.keySet()){
+                        Log.e(TAG,"> "+key);
+                    }
                 }
-
-                fullNode.addLatencyValue(delay);
-                subject.onNext(fullNode);
-            }else{
-                // We cannot properly handle a response to a request whose
-                // URL was not registered at the nodeURLMap. This is because without this,
-                // we cannot know to which node this response corresponds. This should not happen.
-                Log.e(TAG,"nodeURLMap does not contain url: "+url);
-                for(HttpUrl key : nodeURLMap.keySet()){
-                    Log.e(TAG,"> "+key);
-                }
+                webSocket.close(NetworkService.NORMAL_CLOSURE_STATUS, null);
             }
-            webSocket.close(NetworkService.NORMAL_CLOSURE_STATUS, null);
         }
     };
 
