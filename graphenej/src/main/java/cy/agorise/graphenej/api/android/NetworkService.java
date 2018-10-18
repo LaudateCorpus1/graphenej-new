@@ -3,6 +3,7 @@ package cy.agorise.graphenej.api.android;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -15,9 +16,9 @@ import com.google.gson.reflect.TypeToken;
 import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.MissingResourceException;
 
 import cy.agorise.graphenej.Asset;
 import cy.agorise.graphenej.AssetAmount;
@@ -29,7 +30,6 @@ import cy.agorise.graphenej.Transaction;
 import cy.agorise.graphenej.UserAccount;
 import cy.agorise.graphenej.api.ApiAccess;
 import cy.agorise.graphenej.api.ConnectionStatusUpdate;
-import cy.agorise.graphenej.api.bitshares.Nodes;
 import cy.agorise.graphenej.api.calls.ApiCallable;
 import cy.agorise.graphenej.api.calls.GetAccounts;
 import cy.agorise.graphenej.api.calls.GetFullAccounts;
@@ -90,19 +90,20 @@ public class NetworkService extends Service {
     public static final String KEY_ENABLE_LATENCY_VERIFIER = "key_enable_latency_verifier";
 
     /**
-     * Shared preference
+     * Key used to pass via intent a boolean extra to specify whether the connection should
+     * be automatically established.
      */
     public static final String KEY_AUTO_CONNECT = "key_auto_connect";
 
     /**
-     * Constant used to pass a custom list of node URLs. This should be a simple
-     * comma separated list of URLs.
+     * Key used to pass via intent a list of node URLs. The value passed should be a String
+     * containing a simple comma separated list of URLs.
      *
      * For example:
      *
      *      wss://domain1.com/ws,wss://domain2.com/ws,wss://domain3.com/ws
      */
-    public static final String KEY_CUSTOM_NODE_URLS = "key_custom_node_urls";
+    public static final String KEY_NODE_URLS = "key_node_urls";
 
     private final IBinder mBinder = new LocalBinder();
 
@@ -231,33 +232,26 @@ public class NetworkService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
+        Bundle extras = intent.getExtras();
         // Retrieving credentials and requested API data from the shared preferences
-        mUsername = intent.getStringExtra(NetworkService.KEY_USERNAME);
-        mPassword = intent.getStringExtra(NetworkService.KEY_PASSWORD);
-        mRequestedApis = intent.getIntExtra(NetworkService.KEY_REQUESTED_APIS, 0);
-        mAutoConnect = intent.getBooleanExtra(NetworkService.KEY_AUTO_CONNECT, true);
-        boolean verifyNodeLatency = intent.getBooleanExtra(NetworkService.KEY_ENABLE_LATENCY_VERIFIER, false);
+        mUsername = extras.getString(NetworkService.KEY_USERNAME, "");
+        mPassword = extras.getString(NetworkService.KEY_PASSWORD, "");
+        mRequestedApis = extras.getInt(NetworkService.KEY_REQUESTED_APIS, 0);
+        mAutoConnect = extras.getBoolean(NetworkService.KEY_AUTO_CONNECT, true);
+        boolean verifyNodeLatency = extras.getBoolean(NetworkService.KEY_ENABLE_LATENCY_VERIFIER, false);
 
-        ArrayList<String> nodeUrls = new ArrayList<>();
         // If the user of the library desires, a custom list of node URLs can
-        // be passed using the KEY_CUSTOM_NODE_URLS constant
-        String customNodeUrls = intent.getStringExtra(NetworkService.KEY_CUSTOM_NODE_URLS);
-
-        // Adding user-provided list of node URLs first
-        if(customNodeUrls != null){
-            String[] urls = customNodeUrls.split(",");
-            ArrayList<String> urlList = new ArrayList<>(Arrays.asList(urls));
-            nodeUrls.addAll(urlList);
+        // be passed using the KEY_NODE_URLS constant
+        String nodeURLStr = extras.getString(NetworkService.KEY_NODE_URLS, "");
+        if(nodeURLStr.equals("")){
+            throw new MissingResourceException("A comma-separated list of node URLs must be provided as an intent extra", String.class.getName(), NetworkService.KEY_NODE_URLS);
         }
 
-        // Adding the library-provided list of nodes that are not repeated
-        for(String node : Nodes.NODE_URLS) {
-            if(!nodeUrls.contains(node))
-                nodeUrls.add(node);
-        }
+        // Adding user-provided list of node URLs
+        String[] urls = nodeURLStr.split(",");
 
         // Feeding all node information to the NodeProvider instance
-        for(String nodeUrl : nodeUrls){
+        for(String nodeUrl : urls){
             nodeProvider.addNode(new FullNode(nodeUrl));
         }
 
@@ -271,7 +265,7 @@ public class NetworkService extends Service {
             // best node.
             if(verifyNodeLatency){
                 ArrayList<FullNode> fullNodes = new ArrayList<>();
-                for(String url : nodeUrls){
+                for(String url : urls){
                     fullNodes.add(new FullNode(url));
                 }
                 nodeLatencyVerifier = new NodeLatencyVerifier(fullNodes);

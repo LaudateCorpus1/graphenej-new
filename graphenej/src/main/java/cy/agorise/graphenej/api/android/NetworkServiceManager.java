@@ -9,7 +9,6 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
-import android.util.Log;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -101,7 +100,7 @@ public class NetworkServiceManager implements Application.ActivityLifecycleCallb
             intent.putExtra(NetworkService.KEY_USERNAME, mUserName)
                     .putExtra(NetworkService.KEY_PASSWORD, mPassword)
                     .putExtra(NetworkService.KEY_REQUESTED_APIS, mRequestedApis)
-                    .putExtra(NetworkService.KEY_CUSTOM_NODE_URLS, customNodes)
+                    .putExtra(NetworkService.KEY_NODE_URLS, customNodes)
                     .putExtra(NetworkService.KEY_AUTO_CONNECT, mAutoConnect)
                     .putExtra(NetworkService.KEY_ENABLE_LATENCY_VERIFIER, mVerifyLatency);
             context.bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE);
