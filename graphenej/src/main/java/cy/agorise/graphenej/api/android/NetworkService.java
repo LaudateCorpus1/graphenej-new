@@ -2,6 +2,7 @@ package cy.agorise.graphenej.api.android;
 
 import android.app.Service;
 import android.content.Intent;
+import java.util.concurrent.TimeUnit;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
@@ -210,7 +211,10 @@ public class NetworkService extends Service {
      * Actually establishes a connection from this Service to one of the full nodes.
      */
     public void connect(){
-        OkHttpClient client = new OkHttpClient();
+        OkHttpClient client = new OkHttpClient
+                .Builder()
+                .connectTimeout(2, TimeUnit.SECONDS)
+                .build();
         mSelectedNode = nodeProvider.getBestNode();
         Log.v(TAG,"connect.url: "+ mSelectedNode.getUrl());
         Request request = new Request.Builder().url(mSelectedNode.getUrl()).build();
