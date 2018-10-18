@@ -58,6 +58,7 @@ import cy.agorise.graphenej.network.NodeProvider;
 import cy.agorise.graphenej.operations.CustomOperation;
 import cy.agorise.graphenej.operations.LimitOrderCreateOperation;
 import cy.agorise.graphenej.operations.TransferOperation;
+import cy.agorise.graphenej.stats.ExponentialMovingAverage;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.Nullable;
@@ -79,29 +80,69 @@ public class NetworkService extends Service {
     public static final int NORMAL_CLOSURE_STATUS = 1000;
 
     // Time to wait before retrying a connection attempt
-    private final int DEFAULT_RETRY_DELAY = 5000;
+    private final int DEFAULT_RETRY_DELAY = 500;
 
+    /**
+     * Constant to be used as a key in order to pass the user name information, in case the
+     * provided API nodes might require this information.
+     */
     public static final String KEY_USERNAME = "key_username";
 
+    /**
+     * Constant to be used as a key in order to pass the password information, in case the
+     * provided API nodes might require this information.
+     * <p>
+     * This information should be passed as an intent extra when calling the bindService
+     * or startService methods.
+     */
     public static final String KEY_PASSWORD = "key_password";
 
+    /**
+     * Constant used as a key in order to specify which APIs the application will be requiring.
+     * <p>
+     * This information should be passed as an intent extra when calling the bindService
+     * or startService methods.
+     */
     public static final String KEY_REQUESTED_APIS = "key_requested_apis";
 
+    /**
+     * Constant used as a key in order to let the NetworkService know whether or not it should
+     * start a recurring node latency verification task.
+     * <p>
+     * This information should be passed as an intent extra when calling the bindService
+     * or startService methods.
+     */
     public static final String KEY_ENABLE_LATENCY_VERIFIER = "key_enable_latency_verifier";
+
+    /**
+     * Constant used as a key in order to specify the alpha (or smoothing) factor to be used in
+     * the exponential moving average calculated from the different latency samples. This only
+     * makes sense if the latency verification feature is enabled of course.
+     * <p>
+     * This information should be passed as an intent extra when calling the bindService
+     * or startService methods.
+     */
+    public static final String KEY_NODE_LATENCY_SMOOTHING_FACTOR = "key_node_latency_smoothing_factor";
 
     /**
      * Key used to pass via intent a boolean extra to specify whether the connection should
      * be automatically established.
+     * <p>
+     * This information should be passed as an intent extra when calling the bindService
+     * or startService methods.
      */
     public static final String KEY_AUTO_CONNECT = "key_auto_connect";
 
     /**
      * Key used to pass via intent a list of node URLs. The value passed should be a String
      * containing a simple comma separated list of URLs.
-     *
+     * <p>
      * For example:
      *
      *      wss://domain1.com/ws,wss://domain2.com/ws,wss://domain3.com/ws
+     * <p>
+     * This information should be passed as an intent extra when calling the bindService
+     * or startService methods.
      */
     public static final String KEY_NODE_URLS = "key_node_urls";
 
@@ -264,9 +305,10 @@ public class NetworkService extends Service {
             // a first round of measurements in order to be sure to select the
             // best node.
             if(verifyNodeLatency){
+                double alpha = extras.getDouble(KEY_NODE_LATENCY_SMOOTHING_FACTOR, ExponentialMovingAverage.DEFAULT_ALPHA);
                 ArrayList<FullNode> fullNodes = new ArrayList<>();
                 for(String url : urls){
-                    fullNodes.add(new FullNode(url));
+                    fullNodes.add(new FullNode(url, alpha));
                 }
                 nodeLatencyVerifier = new NodeLatencyVerifier(fullNodes);
                 fullNodePublishSubject = nodeLatencyVerifier.start();

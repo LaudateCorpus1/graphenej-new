@@ -38,6 +38,7 @@ public class SampleApplication extends Application {
                 .setCustomNodeUrls(nodes)
                 .setAutoConnect(true)
                 .setNodeLatencyVerification(true)
+                .setLatencyAverageAlpha(0.1f)
                 .build(this);
 
         // Registering this class as a listener to all activity's callback cycle events, in order to

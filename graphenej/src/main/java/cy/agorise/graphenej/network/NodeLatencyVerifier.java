@@ -154,7 +154,6 @@ public class NodeLatencyVerifier {
                     long before = timestamps.get(fullNode);
                     delay = after - before;
                 }
-
                 fullNode.addLatencyValue(delay);
                 subject.onNext(fullNode);
             }else{

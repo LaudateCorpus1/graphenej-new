@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import cy.agorise.graphenej.stats.ExponentialMovingAverage;
+
 /**
  * This class should be instantiated at the application level of the android app.
  *
@@ -52,6 +54,7 @@ public class NetworkServiceManager implements Application.ActivityLifecycleCallb
     private List<String> mCustomNodeUrls = new ArrayList<>();
     private boolean mAutoConnect;
     private boolean mVerifyLatency;
+    private double alpha;
 
     /**
      * Runnable used to schedule a service disconnection once the app is not visible to the user for
@@ -194,6 +197,7 @@ public class NetworkServiceManager implements Application.ActivityLifecycleCallb
         private List<String> customNodeUrls;
         private boolean autoconnect = true;
         private boolean verifyNodeLatency;
+        private double alpha = ExponentialMovingAverage.DEFAULT_ALPHA;
 
         /**
          * Sets the user name, if required to connect to a node.
@@ -266,6 +270,17 @@ public class NetworkServiceManager implements Application.ActivityLifecycleCallb
          */
         public Builder setNodeLatencyVerification(boolean verifyLatency){
             this.verifyNodeLatency = verifyLatency;
+            return this;
+        }
+
+        /**
+         * Sets the node latency verification's exponential moving average alpha parameter.
+         * @param alpha The alpha parameter to use when computing the exponential moving average of the
+         *              measured latencies.
+         * @return              The Builder instance.
+         */
+        public Builder setLatencyAverageAlpha(double alpha){
+            this.alpha = alpha;
             return this;
         }
 
