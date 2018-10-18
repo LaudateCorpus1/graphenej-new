@@ -35,8 +35,6 @@ public class NodeLatencyVerifier {
 
     private HashMap<HttpUrl, FullNode> nodeURLMap = new HashMap<>();
 
-//    private WebSocket webSocket;
-
     // Map used to store the first timestamp required for a RTT (Round Trip Time) measurement.
     // If:
     //      RTT = t2 - t1

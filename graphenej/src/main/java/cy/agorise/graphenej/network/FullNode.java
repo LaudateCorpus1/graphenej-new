@@ -65,10 +65,16 @@ public class FullNode implements Comparable {
 
     /**
      *
-     * @return  The latest latency average value
+     * @return  The latest latency average value. If no measurement has been taken yet, the
+     * maximum allows value of a long primitive, or 2<sup>63</sup>-1 will be returned.
      */
     public double getLatencyValue() {
-        return mLatency.getAverage();
+        double average = mLatency.getAverage();
+        if(average == 0){
+            return Long.MAX_VALUE;
+        }else{
+            return average;
+        }
     }
 
     public boolean isConnected() {
