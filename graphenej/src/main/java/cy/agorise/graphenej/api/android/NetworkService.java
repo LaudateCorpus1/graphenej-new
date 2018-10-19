@@ -2,7 +2,6 @@ package cy.agorise.graphenej.api.android;
 
 import android.app.Service;
 import android.content.Intent;
-import java.util.concurrent.TimeUnit;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.MissingResourceException;
+import java.util.concurrent.TimeUnit;
 
 import cy.agorise.graphenej.Asset;
 import cy.agorise.graphenej.AssetAmount;
@@ -82,6 +82,11 @@ public class NetworkService extends Service {
 
     // Time to wait before retrying a connection attempt
     private final int DEFAULT_RETRY_DELAY = 500;
+
+    // Default connection delay when using the node latency verification strategy. This initial
+    // delay is required in order ot make sure we have a fair selection of node latencies from
+    // which we can choose from.
+    private final int DEFAULT_INITIAL_DELAY = 2000;
 
     /**
      * Constant to be used as a key in order to pass the user name information, in case the
@@ -183,6 +188,8 @@ public class NetworkService extends Service {
     // Property used to keep track of the currently active node
     private FullNode mSelectedNode;
 
+    private Handler mHandler = new Handler();
+
     private Gson gson = new GsonBuilder()
             .registerTypeAdapter(Transaction.class, new Transaction.TransactionDeserializer())
             .registerTypeAdapter(TransferOperation.class, new TransferOperation.TransferDeserializer())
@@ -216,7 +223,7 @@ public class NetworkService extends Service {
                 .connectTimeout(2, TimeUnit.SECONDS)
                 .build();
         mSelectedNode = nodeProvider.getBestNode();
-        Log.v(TAG,"connect.url: "+ mSelectedNode.getUrl());
+        Log.v(TAG,"connect.url: "+ mSelectedNode.getUrl()+", latency: "+mSelectedNode.getLatencyValue());
         Request request = new Request.Builder().url(mSelectedNode.getUrl()).build();
         mWebSocket = client.newWebSocket(request, mWebSocketListener);
     }
@@ -317,10 +324,33 @@ public class NetworkService extends Service {
                 nodeLatencyVerifier = new NodeLatencyVerifier(fullNodes);
                 fullNodePublishSubject = nodeLatencyVerifier.start();
                 fullNodePublishSubject.observeOn(AndroidSchedulers.mainThread()).subscribe(nodeLatencyObserver);
+                mHandler.postDelayed(mConnectAttempt, DEFAULT_INITIAL_DELAY);
             }
         }
         return mBinder;
     }
+
+    /**
+     * Runnable that will perform a connection attempt with the best node after DEFAULT_INITIAL_DELAY
+     * milliseconds. This is used only if the node latency verification is activated.
+     *
+     * The reason to delay the initial connection is that we want to ideally connect to the best node,
+     * meaning the one that offers the lowest latency value. But we have to give some time for the
+     * first node latency measurement round to finish in order to have at least a partial result set
+     * that could be used.
+     */
+    private Runnable mConnectAttempt = new Runnable() {
+        @Override
+        public void run() {
+            FullNode fullNode = nodeProvider.getBestNode();
+            if(fullNode != null){
+                Log.i(TAG, String.format("Connected with %d latency results", latencyUpdateCounter));
+                connect();
+            }else{
+                mHandler.postDelayed(this, DEFAULT_INITIAL_DELAY);
+            }
+        }
+    };
 
     /**
      * Observer used to be notified about node latency measurement updates.
@@ -335,11 +365,7 @@ public class NetworkService extends Service {
             // Updating the node with the new latency measurement
             nodeProvider.updateNode(fullNode);
 
-            // Once we have the latency value of all available nodes,
-            // we can safely proceed to start the connection
-            if(latencyUpdateCounter == nodeProvider.getSortedNodes().size()){
-                connect();
-            }
+            Log.v(TAG, String.format("URL: %s, latency: %.2f", fullNode.getUrl(), fullNode.getLatencyValue()));
         }
 
         @Override
