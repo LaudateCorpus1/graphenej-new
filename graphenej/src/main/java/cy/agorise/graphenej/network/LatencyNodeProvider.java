@@ -1,13 +1,11 @@
 package cy.agorise.graphenej.network;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.PriorityQueue;
 
 public class LatencyNodeProvider implements NodeProvider {
-    private final String TAG = "LatencyNodeProvider";
     private PriorityQueue<FullNode> mFullNodeHeap;
 
     public LatencyNodeProvider(){
@@ -50,12 +48,12 @@ public class LatencyNodeProvider implements NodeProvider {
     public List<FullNode> getSortedNodes() {
         FullNode[] nodeArray = mFullNodeHeap.toArray(new FullNode[mFullNodeHeap.size()]);
         ArrayList<FullNode> nodeList = new ArrayList<>();
-        for(FullNode fullNode : nodeList){
+        for(FullNode fullNode : nodeArray){
             if(fullNode != null){
                 nodeList.add(fullNode);
             }
         }
         Collections.sort(nodeList);
-        return Arrays.asList(nodeArray);
+        return nodeList;
     }
 }
