@@ -21,8 +21,7 @@ public class FullNodeTest {
 
     @Test
     public void testFullNodeAverageLatency(){
-        FullNode fullNode = new FullNode("wss://dummy");
-        fullNode.getLatencyAverage().setAlpha(0.5);
+        FullNode fullNode = new FullNode("wss://dummy", 0.5);
         fullNode.addLatencyValue(100);
         Assert.assertEquals(100.0, fullNode.getLatencyValue());
         fullNode.addLatencyValue(50);

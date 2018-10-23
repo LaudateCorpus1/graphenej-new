@@ -57,14 +57,6 @@ public class FullNode implements Comparable {
 
     /**
      *
-     * @return  The exponential moving average object instance
-     */
-    public ExponentialMovingAverage getLatencyAverage(){
-        return mLatency;
-    }
-
-    /**
-     *
      * @return  The latest latency average value. If no measurement has been taken yet, the
      * maximum allows value of a long primitive, or 2<sup>63</sup>-1 will be returned.
      */
@@ -96,7 +88,13 @@ public class FullNode implements Comparable {
     @Override
     public int compareTo(Object o) {
         FullNode node = (FullNode) o;
-        return (int) Math.ceil(mLatency.getAverage() - node.getLatencyValue());
+        double doubleResult = getLatencyValue() - node.getLatencyValue();
+        if(doubleResult > 0)
+            return 1;
+        else if(doubleResult < 0)
+            return -1;
+        else
+            return 0;
     }
 
     @Override
