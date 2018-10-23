@@ -24,8 +24,7 @@ public class LatencyNodeProvider implements NodeProvider {
 
     @Override
     public boolean updateNode(FullNode fullNode) {
-        boolean removed = mFullNodeHeap.remove(fullNode);
-        System.out.println("Removed: "+removed);
+        mFullNodeHeap.remove(fullNode);
         return mFullNodeHeap.offer(fullNode);
     }
 
