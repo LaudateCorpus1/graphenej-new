@@ -364,8 +364,6 @@ public class NetworkService extends Service {
             latencyUpdateCounter++;
             // Updating the node with the new latency measurement
             nodeProvider.updateNode(fullNode);
-
-            Log.v(TAG, String.format("URL: %s, latency: %.2f", fullNode.getUrl(), fullNode.getLatencyValue()));
         }
 
         @Override
