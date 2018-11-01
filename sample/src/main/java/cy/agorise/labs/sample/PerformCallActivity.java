@@ -19,10 +19,13 @@ import com.google.gson.GsonBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import cy.agorise.graphenej.Asset;
+import cy.agorise.graphenej.AssetAmount;
 import cy.agorise.graphenej.Memo;
 import cy.agorise.graphenej.OperationType;
 import cy.agorise.graphenej.RPC;
@@ -30,6 +33,7 @@ import cy.agorise.graphenej.UserAccount;
 import cy.agorise.graphenej.api.ConnectionStatusUpdate;
 import cy.agorise.graphenej.api.android.DeserializationMap;
 import cy.agorise.graphenej.api.android.RxBus;
+import cy.agorise.graphenej.api.calls.GetAccountBalances;
 import cy.agorise.graphenej.api.calls.GetAccountByName;
 import cy.agorise.graphenej.api.calls.GetAccountHistoryByOperations;
 import cy.agorise.graphenej.api.calls.GetAccounts;
@@ -144,6 +148,8 @@ public class PerformCallActivity extends ConnectedActivity {
             case RPC.CALL_GET_KEY_REFERENCES:
                 setupGetKeyReferences();
                 break;
+            case RPC.CALL_GET_ACCOUNT_BALANCES:
+                setupGetAccountBalances();
             default:
                 Log.d(TAG,"Default called");
         }
@@ -269,6 +275,12 @@ public class PerformCallActivity extends ConnectedActivity {
         param1.setText("BTS8a7XJ94u1traaLGFHw6NgpvUaxmbG4MyCcZC1hBj9HCBuMEwXP");
     }
 
+    private void setupGetAccountBalances(){
+        requiredInput(2);
+        param1.setHint(R.string.get_account_balances_arg1);
+        param2.setHint(R.string.get_account_balances_arg2);
+    }
+
     private void requiredInput(int inputCount){
         if(inputCount == 0){
             mParam1View.setVisibility(View.GONE);
@@ -340,6 +352,8 @@ public class PerformCallActivity extends ConnectedActivity {
             case RPC.CALL_GET_KEY_REFERENCES:
                 getKeyReferences();
                 break;
+            case RPC.CALL_GET_ACCOUNT_BALANCES:
+                getAccountBalances();
             default:
                 Log.d(TAG,"Default called");
         }
@@ -440,6 +454,17 @@ public class PerformCallActivity extends ConnectedActivity {
         }
     }
 
+    private void getAccountBalances(){
+        String accountId = param1.getText().toString();
+        UserAccount userAccount = new UserAccount(accountId);
+        String assets = param2.getText().toString();
+        String[] assetArray = assets.split(",");
+        List<Asset> assetList = new ArrayList<Asset>();
+        for(String id : assetArray) assetList.add(new Asset(id));
+        long id = mNetworkService.sendMessage(new GetAccountBalances(userAccount, assetList), GetAccountBalances.REQUIRED_API);
+        responseMap.put(id, mRPC);
+    }
+
     /**
      * Internal method that will decide what to do with each JSON-RPC response
      *
@@ -450,6 +475,12 @@ public class PerformCallActivity extends ConnectedActivity {
         if(responseMap.get(id) != null){
             String request = responseMap.get(id);
             switch(request){
+                case RPC.CALL_GET_ACCOUNT_BALANCES:
+                    List<AssetAmount> balances = (List<AssetAmount>) response.result;
+                    StringBuilder builder = new StringBuilder();
+                    for(AssetAmount assetAmount : balances) builder.append(assetAmount).append("\n");
+                    mResponseView.setText(builder.toString());
+                    break;
                 case RPC.CALL_GET_ACCOUNTS:
                 case RPC.CALL_GET_BLOCK:
                 case RPC.CALL_GET_BLOCK_HEADER:

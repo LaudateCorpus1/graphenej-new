@@ -79,7 +79,7 @@ public class GetAccountBalances extends BaseGrapheneHandler {
         }
         params.add(mUserAccount.getObjectId());
         params.add(assetList);
-        ApiCall apiCall = new ApiCall(0, RPC.GET_ACCOUNT_BALANCES, params, RPC.VERSION, requestId);
+        ApiCall apiCall = new ApiCall(0, RPC.CALL_GET_ACCOUNT_BALANCES, params, RPC.VERSION, requestId);
         websocket.sendText(apiCall.toJsonString());
     }
 

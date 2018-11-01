@@ -54,4 +54,8 @@
 
     <!-- GetFullAccounts input fields -->
     <string name="get_full_accounts_arg1">Account names or ids, separated by commas</string>
+
+    <!-- GetAccountBalances -->
+    <string name="get_account_balances_arg1">User account</string>
+    <string name="get_account_balances_arg2">Comma-separated list of assets</string>
 </resources>

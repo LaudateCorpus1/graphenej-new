@@ -19,6 +19,7 @@ import cy.agorise.graphenej.LimitOrder;
 import cy.agorise.graphenej.Memo;
 import cy.agorise.graphenej.Transaction;
 import cy.agorise.graphenej.UserAccount;
+import cy.agorise.graphenej.api.calls.GetAccountBalances;
 import cy.agorise.graphenej.api.calls.GetAccountByName;
 import cy.agorise.graphenej.api.calls.GetAccountHistoryByOperations;
 import cy.agorise.graphenej.api.calls.GetAccounts;
@@ -185,6 +186,13 @@ public class DeserializationMap {
                 .registerTypeAdapter(UserAccount.class, new UserAccount.UserAccountSimpleDeserializer())
                 .create();
         mGsonMap.put(GetKeyReferences.class, getKeyReferencesGson);
+
+        // GetAccountBalances
+        mClassMap.put(GetAccountBalances.class, List.class);
+        Gson getAccountBalancesGson = new GsonBuilder()
+                .registerTypeAdapter(AssetAmount.class, new AssetAmount.AssetAmountDeserializer())
+                .create();
+        mGsonMap.put(GetAccountBalances.class, getAccountBalancesGson);
     }
 
     public Class getReceivedClass(Class _class){
