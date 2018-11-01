@@ -191,6 +191,11 @@ public class AssetAmount implements ByteSerializable, JsonSerializable {
         return jsonAmount;
     }
 
+    @Override
+    public String toString() {
+        return String.format("(asset=%s, amount=%s)", asset.getObjectId(), amount.toString(10));
+    }
+
     /**
      * Custom serializer used to translate this object into the JSON-formatted entry we need for a transaction.
      */
