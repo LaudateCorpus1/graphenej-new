@@ -81,7 +81,7 @@ public class NetworkService extends Service {
     public static final int NORMAL_CLOSURE_STATUS = 1000;
 
     // Time to wait before retrying a connection attempt
-    private final int DEFAULT_RETRY_DELAY = 500;
+    private static final int DEFAULT_RETRY_DELAY = 500;
 
     // Default connection delay when using the node latency verification strategy. This initial
     // delay is required in order ot make sure we have a fair selection of node latencies from
@@ -284,7 +284,17 @@ public class NetworkService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        Bundle extras = intent.getExtras();
+        return mBinder;
+    }
+
+    /**
+     * Initialize information and try to connect to a node accordingly. This methods were moved
+     * from onBind to avoid crashes due to components other than {@link NetworkServiceManager}
+     * binding to the service without submitting the proper information.
+     *
+     * @param extras    Bundle that contains all required information for a proper initialization
+     */
+    public void bootstrapService(Bundle extras) {
         // Retrieving credentials and requested API data from the shared preferences
         mUsername = extras.getString(NetworkService.KEY_USERNAME, "");
         mPassword = extras.getString(NetworkService.KEY_PASSWORD, "");
@@ -327,7 +337,6 @@ public class NetworkService extends Service {
                 mHandler.postDelayed(mConnectAttempt, DEFAULT_INITIAL_DELAY);
             }
         }
-        return mBinder;
     }
 
     /**
