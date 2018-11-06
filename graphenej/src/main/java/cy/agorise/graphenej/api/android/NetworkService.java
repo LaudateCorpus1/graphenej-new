@@ -32,6 +32,7 @@ import cy.agorise.graphenej.UserAccount;
 import cy.agorise.graphenej.api.ApiAccess;
 import cy.agorise.graphenej.api.ConnectionStatusUpdate;
 import cy.agorise.graphenej.api.calls.ApiCallable;
+import cy.agorise.graphenej.api.calls.GetAccountBalances;
 import cy.agorise.graphenej.api.calls.GetAccounts;
 import cy.agorise.graphenej.api.calls.GetFullAccounts;
 import cy.agorise.graphenej.api.calls.GetKeyReferences;
@@ -567,7 +568,10 @@ public class NetworkService extends Service {
                     } else if(requestClass == GetKeyReferences.class){
                         Type GetKeyReferencesResponse = new TypeToken<JsonRpcResponse<List<List<UserAccount>>>>(){}.getType();
                         parsedResponse = gson.fromJson(text, GetKeyReferencesResponse);
-                    } else {
+                    } else if(requestClass == GetAccountBalances.class){
+                        Type GetAccountBalancesResponse = new TypeToken<JsonRpcResponse<List<AssetAmount>>>(){}.getType();
+                        parsedResponse = gson.fromJson(text, GetAccountBalancesResponse);
+                    }else {
                         Log.w(TAG,"Unknown request class");
                     }
                 }else{
