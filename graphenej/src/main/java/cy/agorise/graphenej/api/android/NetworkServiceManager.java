@@ -25,14 +25,14 @@ import cy.agorise.graphenej.stats.ExponentialMovingAverage;
  */
 
 public class NetworkServiceManager implements Application.ActivityLifecycleCallbacks  {
-    private final static String TAG = "NetworkServiceManager";
+    private final String TAG = this.getClass().getName();
     /**
      * Constant used to specify how long will the app wait for another activity to go through its starting life
      * cycle events before running the teardownConnectionTask task.
      *
      * This is used as a means to detect whether or not the user has left the app.
      */
-    private final int DISCONNECT_DELAY = 1500;
+    private static final int DISCONNECT_DELAY = 1500;
 
     /**
      * Handler instance used to schedule tasks back to the main thread
@@ -72,8 +72,8 @@ public class NetworkServiceManager implements Application.ActivityLifecycleCallb
         }
     };
 
-    public NetworkServiceManager(Context context){
-        mContextReference = new WeakReference<Context>(context);
+    private NetworkServiceManager(Context context){
+        mContextReference = new WeakReference<>(context);
     }
 
     @Override
@@ -89,25 +89,35 @@ public class NetworkServiceManager implements Application.ActivityLifecycleCallb
             // Creating a new Intent that will be used to start the NetworkService
             Context context = mContextReference.get();
             Intent intent = new Intent(context, NetworkService.class);
-
-            // Adding user-provided node URLs
-            StringBuilder stringBuilder = new StringBuilder();
-            Iterator<String> it = mCustomNodeUrls.iterator();
-            while(it.hasNext()){
-                stringBuilder.append(it.next());
-                if(it.hasNext()) stringBuilder.append(",");
-            }
-            String customNodes = stringBuilder.toString();
-
-            // Adding all
-            intent.putExtra(NetworkService.KEY_USERNAME, mUserName)
-                    .putExtra(NetworkService.KEY_PASSWORD, mPassword)
-                    .putExtra(NetworkService.KEY_REQUESTED_APIS, mRequestedApis)
-                    .putExtra(NetworkService.KEY_NODE_URLS, customNodes)
-                    .putExtra(NetworkService.KEY_AUTO_CONNECT, mAutoConnect)
-                    .putExtra(NetworkService.KEY_ENABLE_LATENCY_VERIFIER, mVerifyLatency);
             context.bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE);
         }
+    }
+
+    /**
+     * This method passes all the required information to the NetworkService to properly
+     * initialize itself
+     */
+    private void passRequiredInfoToConfigureService() {
+        // Adding user-provided node URLs
+        StringBuilder stringBuilder = new StringBuilder();
+        Iterator<String> it = mCustomNodeUrls.iterator();
+        while(it.hasNext()){
+            stringBuilder.append(it.next());
+            if(it.hasNext()) stringBuilder.append(",");
+        }
+        String customNodes = stringBuilder.toString();
+
+        Bundle b = new Bundle();
+
+        // Adding all
+        b.putString(NetworkService.KEY_USERNAME, mUserName);
+        b.putString(NetworkService.KEY_PASSWORD, mPassword);
+        b.putInt(NetworkService.KEY_REQUESTED_APIS, mRequestedApis);
+        b.putString(NetworkService.KEY_NODE_URLS, customNodes);
+        b.putBoolean(NetworkService.KEY_AUTO_CONNECT, mAutoConnect);
+        b.putBoolean(NetworkService.KEY_ENABLE_LATENCY_VERIFIER, mVerifyLatency);
+
+        mService.bootstrapService(b);
     }
 
     @Override
@@ -133,6 +143,8 @@ public class NetworkServiceManager implements Application.ActivityLifecycleCallb
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             NetworkService.LocalBinder binder = (NetworkService.LocalBinder) service;
             mService = binder.getService();
+
+            passRequiredInfoToConfigureService();
         }
 
         @Override
