@@ -80,6 +80,7 @@ public class NetworkService extends Service {
     private final String TAG = this.getClass().getName();
 
     public static final int NORMAL_CLOSURE_STATUS = 1000;
+    private static final int NO_HISTORY_CLOSURE_STATUS = 1001;
 
     // Time to wait before retrying a connection attempt
     private static final int DEFAULT_RETRY_DELAY = 500;
@@ -565,6 +566,9 @@ public class NetworkService extends Service {
                     } else if (requestClass == GetFullAccounts.class) {
                         Type GetFullAccountsResponse = new TypeToken<JsonRpcResponse<List<FullAccountDetails>>>(){}.getType();
                         parsedResponse = gson.fromJson(text, GetFullAccountsResponse);
+
+                        if(parsedResponse != null)
+                            verifyNodeHasHistoryApi(parsedResponse);
                     } else if(requestClass == GetKeyReferences.class){
                         Type GetKeyReferencesResponse = new TypeToken<JsonRpcResponse<List<List<UserAccount>>>>(){}.getType();
                         parsedResponse = gson.fromJson(text, GetKeyReferencesResponse);
@@ -585,6 +589,30 @@ public class NetworkService extends Service {
             }
             // Broadcasting the parsed response to all interested listeners
             RxBus.getBusInstance().send(parsedResponse);
+        }
+
+        /**
+         * This method inspects the node response to find out if the totalOps is equal to zero,
+         * in that case the current connected node may not have the history plugin so we would need
+         * to close the connection and choose a different node.
+         *
+         * @param parsedResponse A JSONRpcResponse from a GetFullAccounts API call
+         */
+        private void verifyNodeHasHistoryApi(JsonRpcResponse parsedResponse) {
+            if(parsedResponse.result instanceof List &&
+                    ((List) parsedResponse.result).size() > 0 &&
+                    ((List) parsedResponse.result).get(0) instanceof FullAccountDetails) {
+
+                FullAccountDetails fullAccountDetails = (FullAccountDetails) ((List) parsedResponse.result).get(0);
+                long totalOps = fullAccountDetails.getStatistics().total_ops;
+
+                if (totalOps == 0) {
+                    Log.d(TAG, "The node returned 0 total_ops for current account and may not have installed the history plugin. " +
+                            "Trying to connect to a different node.");
+
+                    mWebSocket.close(NO_HISTORY_CLOSURE_STATUS, null);
+                }
+            }
         }
 
         /**
@@ -645,20 +673,11 @@ public class NetworkService extends Service {
         public void onClosed(WebSocket webSocket, int code, String reason) {
             super.onClosed(webSocket, code, reason);
             Log.d(TAG,"onClosed");
-            RxBus.getBusInstance().send(new ConnectionStatusUpdate(ConnectionStatusUpdate.DISCONNECTED, ApiAccess.API_NONE));
 
-            isLoggedIn = false;
-
-            // Marking the selected node as not connected
-            mSelectedNode.setConnected(false);
-
-            // Updating the selected node's 'connected' status on the NodeLatencyVerifier instance
-            if(nodeLatencyVerifier != null)
-                nodeLatencyVerifier.updateActiveNodeInformation(mSelectedNode);
-
-
-            // We have currently no selected node
-            mSelectedNode = null;
+            if (code == NO_HISTORY_CLOSURE_STATUS)
+                handleWebSocketDisconnection(true);
+            else
+                handleWebSocketDisconnection(false);
         }
 
         @Override
@@ -669,42 +688,59 @@ public class NetworkService extends Service {
             for(StackTraceElement element : t.getStackTrace()){
                 Log.v(TAG,String.format("%s#%s:%s", element.getClassName(), element.getMethodName(), element.getLineNumber()));
             }
-            // Registering current status
-            isLoggedIn = false;
-            mCurrentId = 0;
-            mApiIds.clear();
 
             // If there is a response, we print it
             if(response != null){
                 Log.e(TAG,"Response: "+response.message());
             }
 
-            // Adding a very high latency value to this node in order to prevent
-            // us from getting it again
-            mSelectedNode.addLatencyValue(Long.MAX_VALUE);
-            nodeProvider.updateNode(mSelectedNode);
+            handleWebSocketDisconnection(true);
+        }
 
+        /**
+         * Method that encapsulates the behavior of handling a disconnection to the current node, and
+         * potentially tries to reconnect to another one.
+         *
+         * @param tryReconnection Variable that states if a reconnection to other node should be tried.
+         */
+        private void handleWebSocketDisconnection(boolean tryReconnection) {
             RxBus.getBusInstance().send(new ConnectionStatusUpdate(ConnectionStatusUpdate.DISCONNECTED, ApiAccess.API_NONE));
 
-            if(nodeProvider.getBestNode() == null){
-                Log.e(TAG,"Giving up on connections");
-                stopSelf();
-            }else{
-                Handler handler = new Handler(Looper.getMainLooper());
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log.d(TAG,"Retrying");
-                        connect();
-                    }
-                }, DEFAULT_RETRY_DELAY);
-            }
+            isLoggedIn = false;
+
             // Marking the selected node as not connected
             mSelectedNode.setConnected(false);
 
             // Updating the selected node's 'connected' status on the NodeLatencyVerifier instance
             if(nodeLatencyVerifier != null)
                 nodeLatencyVerifier.updateActiveNodeInformation(mSelectedNode);
+
+            if(tryReconnection) {
+                // Registering current status
+                mCurrentId = 0;
+                mApiIds.clear();
+
+                // Adding a very high latency value to this node in order to prevent
+                // us from getting it again
+                mSelectedNode.addLatencyValue(Long.MAX_VALUE);
+                nodeProvider.updateNode(mSelectedNode);
+
+                RxBus.getBusInstance().send(new ConnectionStatusUpdate(ConnectionStatusUpdate.DISCONNECTED, ApiAccess.API_NONE));
+
+                if (nodeProvider.getBestNode() == null) {
+                    Log.e(TAG, "Giving up on connections");
+                    stopSelf();
+                } else {
+                    Handler handler = new Handler(Looper.getMainLooper());
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d(TAG, "Retrying");
+                            connect();
+                        }
+                    }, DEFAULT_RETRY_DELAY);
+                }
+            }
 
             // We have currently no selected node
             mSelectedNode = null;
