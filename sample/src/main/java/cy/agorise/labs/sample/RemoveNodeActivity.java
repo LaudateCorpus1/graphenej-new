@@ -32,6 +32,7 @@ import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import cy.agorise.graphenej.api.android.NetworkService;
 import cy.agorise.graphenej.network.FullNode;
 import io.reactivex.Observer;
@@ -67,6 +68,11 @@ public class RemoveNodeActivity extends AppCompatActivity implements ServiceConn
         rvNodes.setAdapter(nodesAdapter);
     }
 
+    @OnClick(R.id.btnRemoveCurrentNode)
+    public void removeCurrentNode() {
+        mNetworkService.removeCurrentNodeAndReconnect();
+    }
+
     @Override
     public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
         // We've bound to LocalService, cast the IBinder and get LocalService instance
@@ -86,7 +92,7 @@ public class RemoveNodeActivity extends AppCompatActivity implements ServiceConn
 
     @Override
     public void onServiceDisconnected(ComponentName componentName) {
-
+        mNetworkService = null;
     }
 
     /**
@@ -98,7 +104,10 @@ public class RemoveNodeActivity extends AppCompatActivity implements ServiceConn
 
         @Override
         public void onNext(FullNode fullNode) {
-            nodesAdapter.add(fullNode);
+            if (!fullNode.isRemoved())
+                nodesAdapter.add(fullNode);
+            else
+                nodesAdapter.remove(fullNode);
         }
 
         @Override
@@ -265,6 +274,9 @@ public class RemoveNodeActivity extends AppCompatActivity implements ServiceConn
             mSortedList.addAll(fullNodes);
         }
 
+        public void remove(FullNode fullNode) {
+            mSortedList.remove(fullNode);
+        }
 
         @Override
         public int getItemCount() {

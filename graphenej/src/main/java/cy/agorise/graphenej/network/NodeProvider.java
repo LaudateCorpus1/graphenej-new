@@ -26,13 +26,19 @@ public interface NodeProvider {
 
     /**
      * Updates the rating of a specific node that is already in the NodeProvider
-     * @param fullNode
+     * @param fullNode The node tu update
      */
     boolean updateNode(FullNode fullNode);
 
     /**
+     * Removes the given node from the nodes list
+     * @param fullNode The node to remove
+     */
+    void removeNode(FullNode fullNode);
+
+    /**
      * Returns an ordered list of {@link FullNode} instances.
-     * @return
+     * @return The sorted list of nodes.
      */
     List<FullNode> getSortedNodes();
 }

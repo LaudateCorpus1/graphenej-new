@@ -703,9 +703,11 @@ public class NetworkService extends Service {
                 mApiIds.clear();
 
                 if (removeSelectedNode) {
-                    // TODO change method to actually remove the node from the list
-                    mSelectedNode.addLatencyValue(Long.MAX_VALUE);
-                    nodeProvider.updateNode(mSelectedNode);
+                    // Remove node from node provider so that it is not returned for following connections
+                    nodeProvider.removeNode(mSelectedNode);
+
+                    // Remove node from nodeLatencyVerifier, so that it publishes its removal
+                    nodeLatencyVerifier.removeNode(mSelectedNode);
                 } else {
                     // Adding a very high latency value to this node in order to prevent
                     // us from getting it again
