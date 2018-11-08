@@ -25,14 +25,14 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:text="Subscribe"/>
         <Button
             android:id="@+id/unsubscribe"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:text="Unsubscribe"/>
     </LinearLayout>
 </android.support.constraint.ConstraintLayout>
