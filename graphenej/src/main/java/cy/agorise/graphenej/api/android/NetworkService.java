@@ -80,7 +80,7 @@ public class NetworkService extends Service {
     private final String TAG = this.getClass().getName();
 
     public static final int NORMAL_CLOSURE_STATUS = 1000;
-    private static final int NO_HISTORY_CLOSURE_STATUS = 1001;
+    private static final int GOING_AWAY_STATUS = 1001;
 
     // Time to wait before retrying a connection attempt
     private static final int DEFAULT_RETRY_DELAY = 500;
@@ -342,6 +342,14 @@ public class NetworkService extends Service {
     }
 
     /**
+     * Public method that can be called from classes that bind to the service and find out that
+     * for any reason want the service to connect to a different node.
+     */
+    public void removeCurrentNodeAndReconnect() {
+        mWebSocket.close(GOING_AWAY_STATUS, null);
+    }
+
+    /**
      * Runnable that will perform a connection attempt with the best node after DEFAULT_INITIAL_DELAY
      * milliseconds. This is used only if the node latency verification is activated.
      *
@@ -566,9 +574,6 @@ public class NetworkService extends Service {
                     } else if (requestClass == GetFullAccounts.class) {
                         Type GetFullAccountsResponse = new TypeToken<JsonRpcResponse<List<FullAccountDetails>>>(){}.getType();
                         parsedResponse = gson.fromJson(text, GetFullAccountsResponse);
-
-                        if(parsedResponse != null)
-                            verifyNodeHasHistoryApi(parsedResponse);
                     } else if(requestClass == GetKeyReferences.class){
                         Type GetKeyReferencesResponse = new TypeToken<JsonRpcResponse<List<List<UserAccount>>>>(){}.getType();
                         parsedResponse = gson.fromJson(text, GetKeyReferencesResponse);
@@ -589,30 +594,6 @@ public class NetworkService extends Service {
             }
             // Broadcasting the parsed response to all interested listeners
             RxBus.getBusInstance().send(parsedResponse);
-        }
-
-        /**
-         * This method inspects the node response to find out if the totalOps is equal to zero,
-         * in that case the current connected node may not have the history plugin so we would need
-         * to close the connection and choose a different node.
-         *
-         * @param parsedResponse A JSONRpcResponse from a GetFullAccounts API call
-         */
-        private void verifyNodeHasHistoryApi(JsonRpcResponse parsedResponse) {
-            if(parsedResponse.result instanceof List &&
-                    ((List) parsedResponse.result).size() > 0 &&
-                    ((List) parsedResponse.result).get(0) instanceof FullAccountDetails) {
-
-                FullAccountDetails fullAccountDetails = (FullAccountDetails) ((List) parsedResponse.result).get(0);
-                long totalOps = fullAccountDetails.getStatistics().total_ops;
-
-                if (totalOps == 0) {
-                    Log.d(TAG, "The node returned 0 total_ops for current account and may not have installed the history plugin. " +
-                            "Trying to connect to a different node.");
-
-                    mWebSocket.close(NO_HISTORY_CLOSURE_STATUS, null);
-                }
-            }
         }
 
         /**
@@ -674,10 +655,10 @@ public class NetworkService extends Service {
             super.onClosed(webSocket, code, reason);
             Log.d(TAG,"onClosed");
 
-            if (code == NO_HISTORY_CLOSURE_STATUS)
-                handleWebSocketDisconnection(true);
+            if (code == GOING_AWAY_STATUS)
+                handleWebSocketDisconnection(true, true);
             else
-                handleWebSocketDisconnection(false);
+                handleWebSocketDisconnection(false, false);
         }
 
         @Override
@@ -694,16 +675,17 @@ public class NetworkService extends Service {
                 Log.e(TAG,"Response: "+response.message());
             }
 
-            handleWebSocketDisconnection(true);
+            handleWebSocketDisconnection(true, false);
         }
 
         /**
          * Method that encapsulates the behavior of handling a disconnection to the current node, and
          * potentially tries to reconnect to another one.
          *
-         * @param tryReconnection Variable that states if a reconnection to other node should be tried.
+         * @param tryReconnection       States if a reconnection to other node should be tried.
+         * @param removeSelectedNode    States if the current node should be removed from the nodes list.
          */
-        private void handleWebSocketDisconnection(boolean tryReconnection) {
+        private void handleWebSocketDisconnection(boolean tryReconnection, boolean removeSelectedNode) {
             RxBus.getBusInstance().send(new ConnectionStatusUpdate(ConnectionStatusUpdate.DISCONNECTED, ApiAccess.API_NONE));
 
             isLoggedIn = false;
@@ -720,10 +702,18 @@ public class NetworkService extends Service {
                 mCurrentId = 0;
                 mApiIds.clear();
 
-                // Adding a very high latency value to this node in order to prevent
-                // us from getting it again
-                mSelectedNode.addLatencyValue(Long.MAX_VALUE);
-                nodeProvider.updateNode(mSelectedNode);
+                if (removeSelectedNode) {
+                    // Remove node from node provider so that it is not returned for following connections
+                    nodeProvider.removeNode(mSelectedNode);
+
+                    // Remove node from nodeLatencyVerifier, so that it publishes its removal
+                    nodeLatencyVerifier.removeNode(mSelectedNode);
+                } else {
+                    // Adding a very high latency value to this node in order to prevent
+                    // us from getting it again
+                    mSelectedNode.addLatencyValue(Long.MAX_VALUE);
+                    nodeProvider.updateNode(mSelectedNode);
+                }
 
                 RxBus.getBusInstance().send(new ConnectionStatusUpdate(ConnectionStatusUpdate.DISCONNECTED, ApiAccess.API_NONE));
 

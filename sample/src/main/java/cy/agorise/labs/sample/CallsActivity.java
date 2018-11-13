@@ -25,6 +25,8 @@ import io.reactivex.functions.Consumer;
 public class CallsActivity extends AppCompatActivity {
     private final String TAG = this.getClass().getName();
 
+    private static final String REMOVE_CURRENT_NODE = "remove_current_node";
+
     @BindView(R.id.call_list)
     RecyclerView mRecyclerView;
 
@@ -75,7 +77,8 @@ public class CallsActivity extends AppCompatActivity {
             RPC.CALL_SET_SUBSCRIBE_CALLBACK,
             RPC.CALL_GET_DYNAMIC_GLOBAL_PROPERTIES,
             RPC.CALL_GET_KEY_REFERENCES,
-            RPC.CALL_GET_ACCOUNT_BALANCES
+            RPC.CALL_GET_ACCOUNT_BALANCES,
+            REMOVE_CURRENT_NODE
         };
 
         @NonNull
@@ -96,6 +99,8 @@ public class CallsActivity extends AppCompatActivity {
                 Intent intent;
                 if(selectedCall.equals(RPC.CALL_SET_SUBSCRIBE_CALLBACK)){
                     intent = new Intent(CallsActivity.this, SubscriptionActivity.class);
+                } else if (selectedCall.equals(REMOVE_CURRENT_NODE)){
+                    intent = new Intent(CallsActivity.this, RemoveNodeActivity.class);
                 }else{
                     intent = new Intent(CallsActivity.this, PerformCallActivity.class);
                     intent.putExtra(Constants.KEY_SELECTED_CALL, selectedCall);

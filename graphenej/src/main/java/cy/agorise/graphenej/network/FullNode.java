@@ -10,6 +10,7 @@ public class FullNode implements Comparable {
     private String mUrl;
     private ExponentialMovingAverage mLatency;
     private boolean isConnected;
+    private boolean isRemoved;
 
     private FullNode(){}
 
@@ -75,6 +76,14 @@ public class FullNode implements Comparable {
 
     public void setConnected(boolean connected) {
         isConnected = connected;
+    }
+
+    public boolean isRemoved() {
+        return isRemoved;
+    }
+
+    public void setRemoved(boolean removed) {
+        isRemoved = removed;
     }
 
     /**

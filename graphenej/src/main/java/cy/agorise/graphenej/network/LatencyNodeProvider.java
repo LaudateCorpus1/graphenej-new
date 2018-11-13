@@ -3,13 +3,14 @@ package cy.agorise.graphenej.network;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.PriorityQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 
 public class LatencyNodeProvider implements NodeProvider {
-    private PriorityQueue<FullNode> mFullNodeHeap;
+
+    private PriorityBlockingQueue<FullNode> mFullNodeHeap;
 
     public LatencyNodeProvider(){
-        mFullNodeHeap = new PriorityQueue<>();
+        mFullNodeHeap = new PriorityBlockingQueue<>();
     }
 
     @Override
@@ -24,8 +25,11 @@ public class LatencyNodeProvider implements NodeProvider {
 
     @Override
     public boolean updateNode(FullNode fullNode) {
-        mFullNodeHeap.remove(fullNode);
-        return mFullNodeHeap.offer(fullNode);
+        boolean existed = mFullNodeHeap.remove(fullNode);
+        if(existed){
+            return mFullNodeHeap.offer(fullNode);
+        }
+        return false;
     }
 
     /**
@@ -36,12 +40,16 @@ public class LatencyNodeProvider implements NodeProvider {
      * @return          True if the node priority was updated successfully
      */
     public boolean updateNode(FullNode fullNode, int latency){
-        if(mFullNodeHeap.remove(fullNode)){
-            fullNode.addLatencyValue(latency);
+        boolean existed = mFullNodeHeap.remove(fullNode);
+        if(existed){
             return mFullNodeHeap.add(fullNode);
-        }else{
-            return false;
         }
+        return false;
+    }
+
+    @Override
+    public void removeNode(FullNode fullNode) {
+        mFullNodeHeap.remove(fullNode);
     }
 
     @Override

@@ -183,4 +183,24 @@ public class NodeLatencyVerifier {
             }
         }
     }
+
+    /**
+     * Removes the given node from the nodes list
+     * @param fullNode The node to remove
+     */
+    public void removeNode(FullNode fullNode){
+        for(FullNode node : mNodeList){
+            if(node.equals(fullNode)){
+                mNodeList.remove(node);
+
+                String normalURL = node.getUrl().replace("wss://", "https://");
+                HttpUrl key = HttpUrl.parse(normalURL);
+                nodeURLMap.remove(key);
+
+                node.setRemoved(true);
+                subject.onNext(node);
+                break;
+            }
+        }
+    }
 }
