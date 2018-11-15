@@ -690,19 +690,21 @@ public class NetworkService extends Service {
 
             isLoggedIn = false;
 
-            // Marking the selected node as not connected
-            mSelectedNode.setConnected(false);
+            if(mSelectedNode != null){
+                // Marking the selected node as not connected
+                mSelectedNode.setConnected(false);
 
-            // Updating the selected node's 'connected' status on the NodeLatencyVerifier instance
-            if(nodeLatencyVerifier != null)
-                nodeLatencyVerifier.updateActiveNodeInformation(mSelectedNode);
+                // Updating the selected node's 'connected' status on the NodeLatencyVerifier instance
+                if(nodeLatencyVerifier != null)
+                    nodeLatencyVerifier.updateActiveNodeInformation(mSelectedNode);
+            }
 
             if(tryReconnection) {
                 // Registering current status
                 mCurrentId = 0;
                 mApiIds.clear();
 
-                if (removeSelectedNode) {
+                if (removeSelectedNode && mSelectedNode != null) {
                     // Remove node from node provider so that it is not returned for following connections
                     nodeProvider.removeNode(mSelectedNode);
 
