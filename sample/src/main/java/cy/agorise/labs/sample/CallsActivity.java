@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -14,13 +15,22 @@ import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import cy.agorise.graphenej.RPC;
+import cy.agorise.graphenej.api.ConnectionStatusUpdate;
+import cy.agorise.graphenej.api.android.RxBus;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 public class CallsActivity extends AppCompatActivity {
+    private final String TAG = this.getClass().getName();
 
     private static final String REMOVE_CURRENT_NODE = "remove_current_node";
 
     @BindView(R.id.call_list)
     RecyclerView mRecyclerView;
+
+    private CompositeDisposable compositeDisposable = new CompositeDisposable();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +41,21 @@ public class CallsActivity extends AppCompatActivity {
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mRecyclerView.addItemDecoration(new DividerItemDecoration(this, LinearLayoutManager.VERTICAL));
         mRecyclerView.setAdapter(new CallAdapter());
+
+        Disposable disposable = RxBus.getBusInstance()
+                .asFlowable()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<Object>() {
+
+                    @Override
+                    public void accept(Object message) throws Exception {
+                        if(message instanceof ConnectionStatusUpdate){
+                            ConnectionStatusUpdate statusUpdate = (ConnectionStatusUpdate) message;
+                            Log.d(TAG, String.format("ConnectionStatusUpdate. code: %d, api: %d", statusUpdate.getUpdateCode(),statusUpdate.getApi()));
+                        }
+                    }
+                });
+        compositeDisposable.add(disposable);
     }
 
     private final class CallAdapter extends RecyclerView.Adapter<CallAdapter.ViewHolder> {
@@ -97,5 +122,11 @@ public class CallsActivity extends AppCompatActivity {
                 this.mCallNameView = view;
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        compositeDisposable.dispose();
     }
 }
