@@ -13,6 +13,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -26,6 +27,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import cy.agorise.graphenej.Asset;
 import cy.agorise.graphenej.AssetAmount;
+import cy.agorise.graphenej.BaseOperation;
 import cy.agorise.graphenej.Memo;
 import cy.agorise.graphenej.OperationType;
 import cy.agorise.graphenej.RPC;
@@ -43,9 +45,11 @@ import cy.agorise.graphenej.api.calls.GetFullAccounts;
 import cy.agorise.graphenej.api.calls.GetKeyReferences;
 import cy.agorise.graphenej.api.calls.GetLimitOrders;
 import cy.agorise.graphenej.api.calls.GetObjects;
+import cy.agorise.graphenej.api.calls.GetRequiredFees;
 import cy.agorise.graphenej.api.calls.ListAssets;
 import cy.agorise.graphenej.errors.MalformedAddressException;
 import cy.agorise.graphenej.models.JsonRpcResponse;
+import cy.agorise.graphenej.operations.TransferOperation;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
@@ -124,6 +128,7 @@ public class PerformCallActivity extends ConnectedActivity {
                 setupGetRelativeAccountHistory();
                 break;
             case RPC.CALL_GET_REQUIRED_FEES:
+                setupGetRequiredFees();
                 break;
             case RPC.CALL_LOOKUP_ASSET_SYMBOLS:
                 setupLookupAssetSymbols();
@@ -207,6 +212,11 @@ public class PerformCallActivity extends ConnectedActivity {
         mParam2View.setHint(resources.getString(R.string.get_relative_account_history_arg2));
         mParam3View.setHint(resources.getString(R.string.get_relative_account_history_arg3));
         mParam4View.setHint(resources.getString(R.string.get_relative_account_history_arg4));
+    }
+
+    private void setupGetRequiredFees(){
+        requiredInput(1);
+        mParam1View.setHint(getString(R.string.get_required_fees_asset));
     }
 
     private void setupLookupAssetSymbols(){
@@ -328,6 +338,7 @@ public class PerformCallActivity extends ConnectedActivity {
             case RPC.CALL_GET_RELATIVE_ACCOUNT_HISTORY:
                 break;
             case RPC.CALL_GET_REQUIRED_FEES:
+                sendGetRequiredFees();
                 break;
             case RPC.CALL_LOOKUP_ASSET_SYMBOLS:
                 break;
@@ -381,6 +392,16 @@ public class PerformCallActivity extends ConnectedActivity {
         }else{
             param1.setError(getResources().getString(R.string.error_input_id));
         }
+    }
+
+    private void sendGetRequiredFees(){
+        String input = param1.getText().toString();
+        ArrayList<BaseOperation> operations = new ArrayList<>();
+        AssetAmount transfer = new AssetAmount(UnsignedLong.valueOf("1000"), new Asset("1.3.0"));
+        AssetAmount fee = new AssetAmount(UnsignedLong.valueOf("1000"), new Asset("1.3.0"));
+        operations.add(new TransferOperation(new UserAccount("1.2.12300"), new UserAccount("1.2.12301"), fee, transfer));
+        long id = mNetworkService.sendMessage(new GetRequiredFees(operations, new Asset(input)), GetRequiredFees.REQUIRED_API);
+        responseMap.put(id, mRPC);
     }
 
     private void sendListAssets(){
