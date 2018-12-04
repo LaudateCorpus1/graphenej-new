@@ -18,7 +18,7 @@ import cy.agorise.graphenej.models.ApiCall;
 
 public class GetRequiredFees implements ApiCallable {
 
-    public static final int REQUIRED_API = ApiAccess.API_DATABASE;
+    public static final int REQUIRED_API = ApiAccess.API_NONE;
 
     private Transaction mTransaction;
     private Asset mFeeAsset;
