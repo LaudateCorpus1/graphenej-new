@@ -345,4 +345,21 @@ public class TransactionTest {
         // Broadcasting transaction
         broadcastTransaction(sourcePrivateKey, operationList, listener, null);
     }
+
+    @Test
+    public void testTransactionHash(){
+        ArrayList<BaseOperation> operations = new ArrayList<>();
+        TransferOperation transferOperation = new TransferOperationBuilder()
+                .setTransferAmount(new AssetAmount(UnsignedLong.valueOf("363"), new Asset("1.3.0")))
+                .setFee(new AssetAmount(UnsignedLong.valueOf("10420"), new Asset("1.3.0")))
+                .setSource(new UserAccount("1.2.1029856"))
+                .setDestination(new UserAccount("1.2.390320"))
+                .build();
+        BlockData blockData = new BlockData(50885, 2948192884L, 1543548351);
+        operations.add(transferOperation);
+        Transaction transaction = new Transaction(blockData, operations);
+        byte[] testHash = transaction.getHash();
+        // Making sure the generated hash matches the one we expect from the block explorer
+        Assert.assertArrayEquals(Util.hexToBytes("4fec588ccdd04daaf80666a3646a48b5189df041"), testHash);
+    }
 }

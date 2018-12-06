@@ -20,6 +20,7 @@ import java.lang.reflect.Type;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -97,6 +98,7 @@ public class Transaction implements ByteSerializable, JsonSerializable {
     public Transaction(BlockData blockData, List<BaseOperation> operationList){
         this.blockData = blockData;
         this.operations = operationList;
+        this.extensions = new Extensions();
     }
 
     /**
@@ -267,7 +269,19 @@ public class Transaction implements ByteSerializable, JsonSerializable {
         obj.addProperty(KEY_REF_BLOCK_PREFIX, blockData.getRefBlockPrefix());
 
         return obj;
+    }
 
+    /**
+     * Method that will return a hash of this transaction's data. The hash covers only the transaction
+     * attributes and not the signature or the chain id.
+     *
+     * @return  A hash of the serialized transaction.
+     */
+    public byte[] getHash(){
+        byte[] txBytes = toBytes();
+        byte[] toHash = Arrays.copyOfRange(txBytes, 32, txBytes.length); //Tx data only, without chain id
+        Sha256Hash hash = Sha256Hash.wrap(Sha256Hash.hash(toHash));
+        return Arrays.copyOfRange(hash.getBytes(), 0, 20); // The hash is only the first 20 bytes
     }
 
     /**
