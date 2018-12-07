@@ -78,6 +78,7 @@ public class CallsActivity extends AppCompatActivity {
             RPC.CALL_GET_DYNAMIC_GLOBAL_PROPERTIES,
             RPC.CALL_GET_KEY_REFERENCES,
             RPC.CALL_GET_ACCOUNT_BALANCES,
+            RPC.CALL_BROADCAST_TRANSACTION,
             REMOVE_CURRENT_NODE
         };
 
