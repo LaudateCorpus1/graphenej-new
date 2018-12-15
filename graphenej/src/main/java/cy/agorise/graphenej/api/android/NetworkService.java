@@ -710,7 +710,8 @@ public class NetworkService extends Service {
 
                     // Remove node from nodeLatencyVerifier, so that it publishes its removal
                     nodeLatencyVerifier.removeNode(mSelectedNode);
-                } else {
+                // Avoid crash #133
+                } else if (mSelectedNode != null){
                     // Adding a very high latency value to this node in order to prevent
                     // us from getting it again
                     mSelectedNode.addLatencyValue(Long.MAX_VALUE);
