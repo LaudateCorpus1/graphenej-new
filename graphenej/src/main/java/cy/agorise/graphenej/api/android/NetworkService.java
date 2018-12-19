@@ -34,6 +34,7 @@ import cy.agorise.graphenej.api.ConnectionStatusUpdate;
 import cy.agorise.graphenej.api.calls.ApiCallable;
 import cy.agorise.graphenej.api.calls.GetAccountBalances;
 import cy.agorise.graphenej.api.calls.GetAccounts;
+import cy.agorise.graphenej.api.calls.GetAssets;
 import cy.agorise.graphenej.api.calls.GetFullAccounts;
 import cy.agorise.graphenej.api.calls.GetKeyReferences;
 import cy.agorise.graphenej.api.calls.GetLimitOrders;
@@ -580,6 +581,9 @@ public class NetworkService extends Service {
                     } else if(requestClass == GetAccountBalances.class){
                         Type GetAccountBalancesResponse = new TypeToken<JsonRpcResponse<List<AssetAmount>>>(){}.getType();
                         parsedResponse = gson.fromJson(text, GetAccountBalancesResponse);
+                    } else if(requestClass == GetAssets.class){
+                        Type GetAssetsResponse = new TypeToken<JsonRpcResponse<List<Asset>>>(){}.getType();
+                        parsedResponse = gson.fromJson(text, GetAssetsResponse);
                     }else {
                         Log.w(TAG,"Unknown request class");
                     }

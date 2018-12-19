@@ -45,6 +45,7 @@ import cy.agorise.graphenej.api.calls.GetAccountBalances;
 import cy.agorise.graphenej.api.calls.GetAccountByName;
 import cy.agorise.graphenej.api.calls.GetAccountHistoryByOperations;
 import cy.agorise.graphenej.api.calls.GetAccounts;
+import cy.agorise.graphenej.api.calls.GetAssets;
 import cy.agorise.graphenej.api.calls.GetBlock;
 import cy.agorise.graphenej.api.calls.GetDynamicGlobalProperties;
 import cy.agorise.graphenej.api.calls.GetFullAccounts;
@@ -143,6 +144,9 @@ public class PerformCallActivity extends ConnectedActivity {
             case RPC.CALL_LIST_ASSETS:
                 setupListAssets();
                 break;
+            case RPC.CALL_GET_ASSETS:
+                setupGetAssets();
+                break;
             case RPC.CALL_GET_ACCOUNT_BY_NAME:
                 setupAccountByName();
                 break;
@@ -240,10 +244,14 @@ public class PerformCallActivity extends ConnectedActivity {
 
     private void setupListAssets(){
         requiredInput(2);
-        Resources resources = getResources();
-        mParam1View.setHint(resources.getString(R.string.list_assets_arg1));
-        mParam2View.setHint(resources.getString(R.string.list_assets_arg2));
+        mParam1View.setHint(getString(R.string.list_assets_arg1));
+        mParam2View.setHint(getString(R.string.list_assets_arg2));
         param2.setInputType(InputType.TYPE_CLASS_NUMBER);
+    }
+
+    private void setupGetAssets(){
+        requiredInput(1);
+        mParam1View.setHint(getString(R.string.get_assets_arg));
     }
 
     private void setupAccountByName(){
@@ -361,6 +369,9 @@ public class PerformCallActivity extends ConnectedActivity {
             case RPC.CALL_LIST_ASSETS:
                 sendListAssets();
                 break;
+            case RPC.CALL_GET_ASSETS:
+                sendGetAssets();
+                break;
             case RPC.CALL_GET_ACCOUNT_BY_NAME:
                 getAccountByName();
                 break;
@@ -434,6 +445,16 @@ public class PerformCallActivity extends ConnectedActivity {
             Toast.makeText(this, getString(R.string.error_number_format), Toast.LENGTH_SHORT).show();
             Log.e(TAG,"NumberFormatException while reading limit value. Msg: "+e.getMessage());
         }
+    }
+
+    private void sendGetAssets(){
+        String assetIds = param1.getText().toString();
+        ArrayList<Asset> assetList = new ArrayList<>();
+        for(String id  :assetIds.split(",")){
+            assetList.add(new Asset(id));
+        }
+        long id = mNetworkService.sendMessage(new GetAssets(assetList), GetAssets.REQUIRED_API);
+        responseMap.put(id, mRPC);
     }
 
     private void getAccountByName(){
@@ -552,6 +573,7 @@ public class PerformCallActivity extends ConnectedActivity {
                 case RPC.CALL_GET_REQUIRED_FEES:
                 case RPC.CALL_LOOKUP_ASSET_SYMBOLS:
                 case RPC.CALL_LIST_ASSETS:
+                case RPC.CALL_GET_ASSETS:
                 case RPC.CALL_GET_ACCOUNT_BY_NAME:
                 case RPC.CALL_GET_LIMIT_ORDERS:
                 case RPC.CALL_GET_ACCOUNT_HISTORY_BY_OPERATIONS:
