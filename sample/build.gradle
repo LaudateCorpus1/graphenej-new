@@ -29,7 +29,8 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    api project(':graphenej')
+    implementation project(':graphenej')
+    implementation 'org.bitcoinj:bitcoinj-core:0.14.3'
     implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation 'com.android.support:recyclerview-v7:27.1.1'
     implementation 'com.android.support:design:27.1.1'

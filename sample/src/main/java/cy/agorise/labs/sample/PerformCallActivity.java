@@ -13,8 +13,11 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.common.primitives.UnsignedLong;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import org.bitcoinj.core.ECKey;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,26 +29,35 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import cy.agorise.graphenej.Asset;
 import cy.agorise.graphenej.AssetAmount;
+import cy.agorise.graphenej.BaseOperation;
+import cy.agorise.graphenej.BlockData;
+import cy.agorise.graphenej.BrainKey;
 import cy.agorise.graphenej.Memo;
 import cy.agorise.graphenej.OperationType;
 import cy.agorise.graphenej.RPC;
+import cy.agorise.graphenej.Transaction;
 import cy.agorise.graphenej.UserAccount;
 import cy.agorise.graphenej.api.ConnectionStatusUpdate;
 import cy.agorise.graphenej.api.android.DeserializationMap;
 import cy.agorise.graphenej.api.android.RxBus;
+import cy.agorise.graphenej.api.calls.BroadcastTransaction;
 import cy.agorise.graphenej.api.calls.GetAccountBalances;
 import cy.agorise.graphenej.api.calls.GetAccountByName;
 import cy.agorise.graphenej.api.calls.GetAccountHistoryByOperations;
 import cy.agorise.graphenej.api.calls.GetAccounts;
+import cy.agorise.graphenej.api.calls.GetAssets;
 import cy.agorise.graphenej.api.calls.GetBlock;
 import cy.agorise.graphenej.api.calls.GetDynamicGlobalProperties;
 import cy.agorise.graphenej.api.calls.GetFullAccounts;
 import cy.agorise.graphenej.api.calls.GetKeyReferences;
 import cy.agorise.graphenej.api.calls.GetLimitOrders;
 import cy.agorise.graphenej.api.calls.GetObjects;
+import cy.agorise.graphenej.api.calls.GetRequiredFees;
 import cy.agorise.graphenej.api.calls.ListAssets;
 import cy.agorise.graphenej.errors.MalformedAddressException;
 import cy.agorise.graphenej.models.JsonRpcResponse;
+import cy.agorise.graphenej.operations.TransferOperation;
+import cy.agorise.graphenej.operations.TransferOperationBuilder;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
@@ -124,12 +136,16 @@ public class PerformCallActivity extends ConnectedActivity {
                 setupGetRelativeAccountHistory();
                 break;
             case RPC.CALL_GET_REQUIRED_FEES:
+                setupGetRequiredFees();
                 break;
             case RPC.CALL_LOOKUP_ASSET_SYMBOLS:
                 setupLookupAssetSymbols();
                 break;
             case RPC.CALL_LIST_ASSETS:
                 setupListAssets();
+                break;
+            case RPC.CALL_GET_ASSETS:
+                setupGetAssets();
                 break;
             case RPC.CALL_GET_ACCOUNT_BY_NAME:
                 setupAccountByName();
@@ -150,6 +166,9 @@ public class PerformCallActivity extends ConnectedActivity {
                 break;
             case RPC.CALL_GET_ACCOUNT_BALANCES:
                 setupGetAccountBalances();
+                break;
+            case RPC.CALL_BROADCAST_TRANSACTION:
+                setupBroadcastTransaction();
             default:
                 Log.d(TAG,"Default called");
         }
@@ -209,6 +228,11 @@ public class PerformCallActivity extends ConnectedActivity {
         mParam4View.setHint(resources.getString(R.string.get_relative_account_history_arg4));
     }
 
+    private void setupGetRequiredFees(){
+        requiredInput(1);
+        mParam1View.setHint(getString(R.string.get_required_fees_asset));
+    }
+
     private void setupLookupAssetSymbols(){
         requiredInput(4);
         Resources resources = getResources();
@@ -220,10 +244,14 @@ public class PerformCallActivity extends ConnectedActivity {
 
     private void setupListAssets(){
         requiredInput(2);
-        Resources resources = getResources();
-        mParam1View.setHint(resources.getString(R.string.list_assets_arg1));
-        mParam2View.setHint(resources.getString(R.string.list_assets_arg2));
+        mParam1View.setHint(getString(R.string.list_assets_arg1));
+        mParam2View.setHint(getString(R.string.list_assets_arg2));
         param2.setInputType(InputType.TYPE_CLASS_NUMBER);
+    }
+
+    private void setupGetAssets(){
+        requiredInput(1);
+        mParam1View.setHint(getString(R.string.get_assets_arg));
     }
 
     private void setupAccountByName(){
@@ -281,6 +309,12 @@ public class PerformCallActivity extends ConnectedActivity {
         param2.setHint(R.string.get_account_balances_arg2);
     }
 
+    private void setupBroadcastTransaction(){
+        requiredInput(2);
+        param1.setText("1.2.116354");
+        param2.setText("1");
+    }
+
     private void requiredInput(int inputCount){
         if(inputCount == 0){
             mParam1View.setVisibility(View.GONE);
@@ -328,11 +362,15 @@ public class PerformCallActivity extends ConnectedActivity {
             case RPC.CALL_GET_RELATIVE_ACCOUNT_HISTORY:
                 break;
             case RPC.CALL_GET_REQUIRED_FEES:
+                sendGetRequiredFees();
                 break;
             case RPC.CALL_LOOKUP_ASSET_SYMBOLS:
                 break;
             case RPC.CALL_LIST_ASSETS:
                 sendListAssets();
+                break;
+            case RPC.CALL_GET_ASSETS:
+                sendGetAssets();
                 break;
             case RPC.CALL_GET_ACCOUNT_BY_NAME:
                 getAccountByName();
@@ -354,6 +392,9 @@ public class PerformCallActivity extends ConnectedActivity {
                 break;
             case RPC.CALL_GET_ACCOUNT_BALANCES:
                 getAccountBalances();
+                break;
+            case RPC.CALL_BROADCAST_TRANSACTION:
+                broadcastTransaction();
             default:
                 Log.d(TAG,"Default called");
         }
@@ -383,6 +424,16 @@ public class PerformCallActivity extends ConnectedActivity {
         }
     }
 
+    private void sendGetRequiredFees(){
+        String input = param1.getText().toString();
+        ArrayList<BaseOperation> operations = new ArrayList<>();
+        AssetAmount transfer = new AssetAmount(UnsignedLong.valueOf("1000"), new Asset("1.3.0"));
+        AssetAmount fee = new AssetAmount(UnsignedLong.valueOf("1000"), new Asset("1.3.0"));
+        operations.add(new TransferOperation(new UserAccount("1.2.12300"), new UserAccount("1.2.12301"), fee, transfer));
+        long id = mNetworkService.sendMessage(new GetRequiredFees(operations, new Asset(input)), GetRequiredFees.REQUIRED_API);
+        responseMap.put(id, mRPC);
+    }
+
     private void sendListAssets(){
         try{
             String lowerBound = param1.getText().toString();
@@ -394,6 +445,16 @@ public class PerformCallActivity extends ConnectedActivity {
             Toast.makeText(this, getString(R.string.error_number_format), Toast.LENGTH_SHORT).show();
             Log.e(TAG,"NumberFormatException while reading limit value. Msg: "+e.getMessage());
         }
+    }
+
+    private void sendGetAssets(){
+        String assetIds = param1.getText().toString();
+        ArrayList<Asset> assetList = new ArrayList<>();
+        for(String id  :assetIds.split(",")){
+            assetList.add(new Asset(id));
+        }
+        long id = mNetworkService.sendMessage(new GetAssets(assetList), GetAssets.REQUIRED_API);
+        responseMap.put(id, mRPC);
     }
 
     private void getAccountByName(){
@@ -465,6 +526,28 @@ public class PerformCallActivity extends ConnectedActivity {
         responseMap.put(id, mRPC);
     }
 
+    private void broadcastTransaction(){
+        String destinationId = param1.getText().toString();
+        String amount = param2.getText().toString();
+        UnsignedLong transferAmount = UnsignedLong.valueOf(amount).times(UnsignedLong.valueOf(100000));
+        TransferOperation operation = new TransferOperationBuilder()
+                .setSource(new UserAccount("1.2.1029856"))
+                .setDestination(new UserAccount(destinationId))
+                .setTransferAmount(new AssetAmount( transferAmount, new Asset("1.3.0")))
+                .setFee(new AssetAmount(UnsignedLong.valueOf("10420"), new Asset("1.3.0")))
+                .build();
+        ArrayList<BaseOperation> ops = new ArrayList<>();
+        ops.add(operation);
+        // >> Replace with your brainkey <<
+        BrainKey brainKey = new BrainKey(">> Place your brainkey here <<", 0);
+        ECKey privKey = brainKey.getPrivateKey();
+        // Use valid BlockData
+        BlockData blockData = new BlockData(44542, 3342959171L, 1544917202L);
+        Transaction tx = new Transaction(privKey, blockData, ops);
+        long id = mNetworkService.sendMessage(new BroadcastTransaction(tx), BroadcastTransaction.REQUIRED_API);
+        responseMap.put(id, mRPC);
+    }
+
     /**
      * Internal method that will decide what to do with each JSON-RPC response
      *
@@ -490,6 +573,7 @@ public class PerformCallActivity extends ConnectedActivity {
                 case RPC.CALL_GET_REQUIRED_FEES:
                 case RPC.CALL_LOOKUP_ASSET_SYMBOLS:
                 case RPC.CALL_LIST_ASSETS:
+                case RPC.CALL_GET_ASSETS:
                 case RPC.CALL_GET_ACCOUNT_BY_NAME:
                 case RPC.CALL_GET_LIMIT_ORDERS:
                 case RPC.CALL_GET_ACCOUNT_HISTORY_BY_OPERATIONS:
@@ -500,7 +584,12 @@ public class PerformCallActivity extends ConnectedActivity {
                     break;
                 default:
                     Log.w(TAG,"Case not handled");
-                    mResponseView.setText(mResponseView.getText() + response.result.toString());
+                    if(response.result != null)
+                        mResponseView.setText(mResponseView.getText() + response.result.toString());
+                    else if(response.error != null)
+                        mResponseView.setText(mResponseView.getText() + String.format("Error code: %d, Msg: %s", response.error.code, response.error.message));
+                    else
+                        mResponseView.setText(mResponseView.getText() + "\nnull");
             }
             // Remember to remove the used id entry from the map, as it would
             // otherwise just increase the app's memory usage
