@@ -224,6 +224,8 @@ public class NetworkService extends Service {
         OkHttpClient client = new OkHttpClient
                 .Builder()
                 .connectTimeout(2, TimeUnit.SECONDS)
+                .readTimeout(5, TimeUnit.SECONDS)
+                .writeTimeout(5, TimeUnit.SECONDS)
                 .build();
         mSelectedNode = nodeProvider.getBestNode();
         Log.v(TAG,"connect.url: "+ mSelectedNode.getUrl()+", latency: "+mSelectedNode.getLatencyValue());
