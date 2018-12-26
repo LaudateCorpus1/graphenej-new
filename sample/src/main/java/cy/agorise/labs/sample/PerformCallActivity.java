@@ -37,6 +37,7 @@ import cy.agorise.graphenej.OperationType;
 import cy.agorise.graphenej.RPC;
 import cy.agorise.graphenej.Transaction;
 import cy.agorise.graphenej.UserAccount;
+import cy.agorise.graphenej.Util;
 import cy.agorise.graphenej.api.ConnectionStatusUpdate;
 import cy.agorise.graphenej.api.android.DeserializationMap;
 import cy.agorise.graphenej.api.android.RxBus;
@@ -53,6 +54,7 @@ import cy.agorise.graphenej.api.calls.GetKeyReferences;
 import cy.agorise.graphenej.api.calls.GetLimitOrders;
 import cy.agorise.graphenej.api.calls.GetObjects;
 import cy.agorise.graphenej.api.calls.GetRequiredFees;
+import cy.agorise.graphenej.api.calls.GetTransaction;
 import cy.agorise.graphenej.api.calls.ListAssets;
 import cy.agorise.graphenej.errors.MalformedAddressException;
 import cy.agorise.graphenej.models.JsonRpcResponse;
@@ -169,6 +171,9 @@ public class PerformCallActivity extends ConnectedActivity {
                 break;
             case RPC.CALL_BROADCAST_TRANSACTION:
                 setupBroadcastTransaction();
+                break;
+            case RPC.CALL_GET_TRANSACTION:
+                setupGetTransaction();
             default:
                 Log.d(TAG,"Default called");
         }
@@ -315,6 +320,12 @@ public class PerformCallActivity extends ConnectedActivity {
         param2.setText("1");
     }
 
+    private void setupGetTransaction(){
+        requiredInput(2);
+        param1.setText("13282815");
+        param2.setText("0");
+    }
+
     private void requiredInput(int inputCount){
         if(inputCount == 0){
             mParam1View.setVisibility(View.GONE);
@@ -395,6 +406,9 @@ public class PerformCallActivity extends ConnectedActivity {
                 break;
             case RPC.CALL_BROADCAST_TRANSACTION:
                 broadcastTransaction();
+                break;
+            case RPC.CALL_GET_TRANSACTION:
+                getTransaction();
             default:
                 Log.d(TAG,"Default called");
         }
@@ -526,6 +540,13 @@ public class PerformCallActivity extends ConnectedActivity {
         responseMap.put(id, mRPC);
     }
 
+    private void getTransaction(){
+        long blockNum = Long.parseLong(param1.getText().toString());
+        long index = Long.parseLong(param2.getText().toString());
+        long id = mNetworkService.sendMessage(new GetTransaction(blockNum, index), GetTransaction.REQUIRED_API);
+        responseMap.put(id, mRPC);
+    }
+
     private void broadcastTransaction(){
         String destinationId = param1.getText().toString();
         String amount = param2.getText().toString();
@@ -563,6 +584,10 @@ public class PerformCallActivity extends ConnectedActivity {
                     StringBuilder builder = new StringBuilder();
                     for(AssetAmount assetAmount : balances) builder.append(assetAmount).append("\n");
                     mResponseView.setText(builder.toString());
+                    break;
+                case RPC.CALL_GET_TRANSACTION:
+                    Transaction tx = (Transaction) response.result;
+                    mResponseView.setText(mResponseView.getText() + String.format("[%s][%s]", tx.toString(), Util.bytesToHex(tx.getHash())));
                     break;
                 case RPC.CALL_GET_ACCOUNTS:
                 case RPC.CALL_GET_BLOCK:

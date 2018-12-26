@@ -239,7 +239,12 @@ public class Transaction implements ByteSerializable, JsonSerializable {
 
         // Getting the signature before anything else,
         // since this might change the transaction expiration data slightly
-        byte[] signature = getGrapheneSignature();
+        byte[] signature = null;
+        try{
+            signature = getGrapheneSignature();
+        }catch(Exception e){
+            System.out.println("Could not generate signature");
+        }
 
         // Formatting expiration time
         Date expirationTime = new Date(blockData.getExpiration() * 1000);
@@ -249,10 +254,12 @@ public class Transaction implements ByteSerializable, JsonSerializable {
         // Adding expiration
         obj.addProperty(KEY_EXPIRATION, dateFormat.format(expirationTime));
 
-        // Adding signatures
-        JsonArray signatureArray = new JsonArray();
-        signatureArray.add(Util.bytesToHex(signature));
-        obj.add(KEY_SIGNATURES, signatureArray);
+        if(signature != null){
+            // Adding signature
+            JsonArray signatureArray = new JsonArray();
+            signatureArray.add(Util.bytesToHex(signature));
+            obj.add(KEY_SIGNATURES, signatureArray);
+        }
 
         JsonArray operationsArray = new JsonArray();
         for(BaseOperation operation : operations){
@@ -313,7 +320,8 @@ public class Transaction implements ByteSerializable, JsonSerializable {
             SimpleDateFormat dateFormat = new SimpleDateFormat(Util.TIME_DATE_FORMAT);
             dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
             Date expirationDate = dateFormat.parse(expiration, new ParsePosition(0));
-            BlockData blockData = new BlockData(refBlockNum, refBlockPrefix, expirationDate.getTime());
+            long relativeExpiration = expirationDate.getTime() / 1000;
+            BlockData blockData = new BlockData(refBlockNum, refBlockPrefix, relativeExpiration);
 
             // Parsing operation list
             BaseOperation operation = null;
@@ -422,5 +430,10 @@ public class Transaction implements ByteSerializable, JsonSerializable {
             }
             return new Transaction(blockData, operationList);
         }
+    }
+
+    @Override
+    public String toString() {
+        return this.toJsonString();
     }
 }

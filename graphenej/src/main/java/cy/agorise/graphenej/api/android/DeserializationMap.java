@@ -34,6 +34,7 @@ import cy.agorise.graphenej.api.calls.GetMarketHistory;
 import cy.agorise.graphenej.api.calls.GetObjects;
 import cy.agorise.graphenej.api.calls.GetRelativeAccountHistory;
 import cy.agorise.graphenej.api.calls.GetRequiredFees;
+import cy.agorise.graphenej.api.calls.GetTransaction;
 import cy.agorise.graphenej.api.calls.ListAssets;
 import cy.agorise.graphenej.api.calls.LookupAssetSymbols;
 import cy.agorise.graphenej.models.AccountProperties;
@@ -201,6 +202,15 @@ public class DeserializationMap {
                 .registerTypeAdapter(Asset.class, new Asset.AssetDeserializer())
                 .create();
         mGsonMap.put(GetAssets.class, getAssetsGson);
+
+        // GetTransaction
+        mClassMap.put(GetTransaction.class, Transaction.class);
+        Gson getTransactionGson = new GsonBuilder()
+                .registerTypeAdapter(Transaction.class, new Transaction.TransactionDeserializer())
+                .registerTypeAdapter(AssetAmount.class, new AssetAmount.AssetAmountDeserializer())
+                .registerTypeAdapter(TransferOperation.class, new TransferOperation.TransferDeserializer())
+                .create();
+        mGsonMap.put(GetTransaction.class, getTransactionGson);
     }
 
     public Class getReceivedClass(Class _class){

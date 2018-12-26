@@ -546,6 +546,9 @@ public class NetworkService extends Service {
                 }else if(responsePayloadClass == DynamicGlobalProperties.class){
                     Type GetDynamicGlobalPropertiesResponse = new TypeToken<JsonRpcResponse<DynamicGlobalProperties>>(){}.getType();
                     parsedResponse = gson.fromJson(text, GetDynamicGlobalPropertiesResponse);
+                }else if(responsePayloadClass == Transaction.class){
+                    Type GetTransactionClass = new TypeToken<JsonRpcResponse<Transaction>>(){}.getType();
+                    parsedResponse = gson.fromJson(text, GetTransactionClass);
                 }else if(responsePayloadClass == List.class){
                     // If the response payload is a List, further inquiry is required in order to
                     // determine a list of what is expected here

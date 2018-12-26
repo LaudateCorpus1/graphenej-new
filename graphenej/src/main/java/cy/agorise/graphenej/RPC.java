@@ -34,4 +34,5 @@ public class RPC {
     public static final String CALL_GET_TRADE_HISTORY = "get_trade_history";
     public static final String CALL_GET_MARKET_HISTORY = "get_market_history";
     public static final String CALL_GET_ALL_ASSET_HOLDERS = "get_all_asset_holders";
+    public static final String CALL_GET_TRANSACTION = "get_transaction";
 }
