@@ -776,6 +776,12 @@ public class NetworkService extends Service {
         return nodeProvider.getSortedNodes();
     }
 
+
+    /**
+     * Returns the currently selected node
+     */
+    public FullNode getSelectedNode() { return mSelectedNode; }
+
     /**
      * Returns an observable that will notify its observers about node latency updates.
      * @return  Observer of {@link FullNode} instances.
