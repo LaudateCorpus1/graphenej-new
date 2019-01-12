@@ -699,6 +699,9 @@ public class NetworkService extends Service {
 
             isLoggedIn = false;
 
+            // Clearing previous request id to class mappings
+            mRequestClassMap.clear();
+
             if(mSelectedNode != null){
                 // Marking the selected node as not connected
                 mSelectedNode.setConnected(false);

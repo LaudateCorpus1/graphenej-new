@@ -207,6 +207,7 @@ public class DeserializationMap {
         mClassMap.put(GetTransaction.class, Transaction.class);
         Gson getTransactionGson = new GsonBuilder()
                 .registerTypeAdapter(Transaction.class, new Transaction.TransactionDeserializer())
+                .registerTypeAdapter(Memo.class, new Memo.MemoDeserializer())
                 .registerTypeAdapter(AssetAmount.class, new AssetAmount.AssetAmountDeserializer())
                 .registerTypeAdapter(TransferOperation.class, new TransferOperation.TransferDeserializer())
                 .create();
