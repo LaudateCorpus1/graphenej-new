@@ -13,6 +13,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -152,7 +153,8 @@ public class TransactionTest {
         PublicKey to2 = new PublicKey(ECKey.fromPublicOnly(new BrainKey(BILTHON_16_BRAIN_KEY, 0).getPublicKey()));
 
         // Creating memo
-        BigInteger nonce = BigInteger.ONE;
+        SecureRandom random = new SecureRandom();
+        BigInteger nonce = BigInteger.valueOf(random.nextLong());
         byte[] encryptedMessage = Memo.encryptMessage(sourcePrivateKey, to1, nonce, "another message");
         Memo memo = new Memo(new Address(ECKey.fromPublicOnly(sourcePrivateKey.getPubKey())), new Address(to1.getKey()), nonce, encryptedMessage);
 

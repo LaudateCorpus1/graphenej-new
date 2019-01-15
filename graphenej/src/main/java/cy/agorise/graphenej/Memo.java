@@ -293,7 +293,7 @@ public class Memo implements ByteSerializable, JsonSerializable {
         }else{
             memoObject.addProperty(KEY_FROM, this.from.toString());
             memoObject.addProperty(KEY_TO, this.to.toString());
-            memoObject.addProperty(KEY_NONCE, String.format("%x", this.nonce));
+            memoObject.addProperty(KEY_NONCE, this.nonce.toString());
             if(this.message != null)
                 memoObject.addProperty(KEY_MESSAGE, Util.bytesToHex(this.message));
         }
