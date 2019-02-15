@@ -42,6 +42,7 @@ public class LatencyNodeProvider implements NodeProvider {
     public boolean updateNode(FullNode fullNode, int latency){
         boolean existed = mFullNodeHeap.remove(fullNode);
         if(existed){
+            fullNode.addLatencyValue(latency);
             return mFullNodeHeap.add(fullNode);
         }
         return false;
