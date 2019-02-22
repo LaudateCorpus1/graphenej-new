@@ -191,7 +191,7 @@ public class NetworkService extends Service {
     // Property used to keep track of the currently active node
     private FullNode mSelectedNode;
 
-    private Handler mHandler = new Handler();
+    private Handler mHandler = new Handler(Looper.getMainLooper());
 
     private Gson gson = new GsonBuilder()
             .registerTypeAdapter(Transaction.class, new Transaction.TransactionDeserializer())
@@ -736,8 +736,7 @@ public class NetworkService extends Service {
                     Log.e(TAG, "Giving up on connections");
                     stopSelf();
                 } else {
-                    Handler handler = new Handler(Looper.getMainLooper());
-                    handler.postDelayed(new Runnable() {
+                    mHandler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
                             Log.d(TAG, "Retrying");
