@@ -58,6 +58,14 @@ public class MemoTest {
     }
 
     @Test
+    public void canObtainSharedSecret(){
+        byte[] secret1 = sourcePrivate.getPubKeyPoint().multiply(destinationPrivate.getPrivKey()).normalize().getXCoord().getEncoded();
+        byte[] secret2 = destinationPrivate.getPubKeyPoint().multiply(sourcePrivate.getPrivKey()).normalize().getXCoord().getEncoded();
+        System.out.println(String.format("Secret 1: %s, Secret 2: %s", Util.bytesToHex(secret1), Util.bytesToHex(secret2)));
+        Assert.assertArrayEquals(secret1, secret2);
+    }
+
+    @Test
     public void shouldMatchPredefinedCiphertext(){
         byte[] encrypted = Memo.encryptMessage(sourcePrivate, destinationAddress, shortEncryptedMessageNonce, shortMessage);
         assertArrayEquals("Testing with short message and nonce 1", encrypted, shortEncryptedMessage);
@@ -114,6 +122,19 @@ public class MemoTest {
             System.out.println("Long Decrypted Message: " + longDecrypted);
             assertEquals("The longer message must be equal to the original", longerMessage, longDecrypted);
         } catch (ChecksumException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void shouldDecryptOwnMessage(){
+        try{
+            BigInteger nonce = new BigInteger("123456789");
+            byte[] encrypted = Memo.encryptMessage(sourcePrivate, destinationAddress, nonce, longerMessage);
+            String decrypted = Memo.decryptMessage(sourcePrivate, destinationAddress, nonce, encrypted);
+            System.out.println("Decrypted: "+decrypted);
+            Assert.assertEquals(longerMessage, decrypted);
+        }catch (ChecksumException e) {
             e.printStackTrace();
         }
     }
