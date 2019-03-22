@@ -157,6 +157,7 @@ public class PerformCallActivity extends ConnectedActivity {
                 break;
             case RPC.CALL_GET_LIMIT_ORDERS:
                 setupGetLimitOrders();
+                break;
             case RPC.CALL_GET_FULL_ACCOUNTS:
                 setupGetFullAccounts();
                 break;
