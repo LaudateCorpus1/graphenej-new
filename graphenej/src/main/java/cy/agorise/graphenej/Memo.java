@@ -1,15 +1,11 @@
 package cy.agorise.graphenej;
 
 import com.google.common.primitives.Bytes;
-import com.google.gson.Gson;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
-
+import com.google.gson.*;
+import cy.agorise.graphenej.errors.ChecksumException;
+import cy.agorise.graphenej.errors.MalformedAddressException;
+import cy.agorise.graphenej.interfaces.ByteSerializable;
+import cy.agorise.graphenej.interfaces.JsonSerializable;
 import org.bitcoinj.core.ECKey;
 import org.spongycastle.math.ec.ECPoint;
 
@@ -18,11 +14,6 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-
-import cy.agorise.graphenej.errors.ChecksumException;
-import cy.agorise.graphenej.errors.MalformedAddressException;
-import cy.agorise.graphenej.interfaces.ByteSerializable;
-import cy.agorise.graphenej.interfaces.JsonSerializable;
 
 /**
  * Class used to represent a memo data structure
@@ -186,10 +177,6 @@ public class Memo implements ByteSerializable, JsonSerializable {
 
             byte[] seed = Bytes.concat(nonceBytes, Util.hexlify(Util.bytesToHex(ss)));
 
-            // Calculating checksum
-            byte[] sha256Msg = sha256.digest(message);
-
-
             // Applying decryption
             byte[] temp = Util.decryptAES(message, seed);
             byte[] checksum = Arrays.copyOfRange(temp, 0, 4);
@@ -201,7 +188,7 @@ public class Memo implements ByteSerializable, JsonSerializable {
                 throw new ChecksumException("Invalid checksum found while performing decryption");
             }
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("NoSuchAlgotithmException. Msg:"+ e.getMessage());
+            System.out.println("NoSuchAlgorithmException. Msg:"+ e.getMessage());
         }
         return plaintext;
     }

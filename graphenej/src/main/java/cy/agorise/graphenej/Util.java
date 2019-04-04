@@ -2,7 +2,6 @@ package cy.agorise.graphenej;
 
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.UnsignedLong;
-
 import org.spongycastle.crypto.DataLengthException;
 import org.spongycastle.crypto.InvalidCipherTextException;
 import org.spongycastle.crypto.engines.AESFastEngine;
@@ -10,13 +9,7 @@ import org.spongycastle.crypto.modes.CBCBlockCipher;
 import org.spongycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.spongycastle.crypto.params.KeyParameter;
 import org.spongycastle.crypto.params.ParametersWithIV;
-import org.tukaani.xz.CorruptedInputException;
-import org.tukaani.xz.FinishableOutputStream;
-import org.tukaani.xz.LZMA2Options;
-import org.tukaani.xz.LZMAInputStream;
-import org.tukaani.xz.LZMAOutputStream;
-import org.tukaani.xz.XZInputStream;
-import org.tukaani.xz.XZOutputStream;
+import org.tukaani.xz.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -320,7 +313,9 @@ public class Util {
             }
             
             byte[] temp = new byte[count];
-            System.arraycopy(out, out.length - count, temp, 0, temp.length);
+            int srcPos = out.length - count > 0 ? out.length - count : 0;
+            int length = count < out.length ? count : out.length;
+            System.arraycopy(out, srcPos, temp, 0, length);
             byte[] temp2 = new byte[count];
             Arrays.fill(temp2, (byte) count);
             if (Arrays.equals(temp, temp2)) {
