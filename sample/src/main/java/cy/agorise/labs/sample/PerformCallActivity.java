@@ -34,6 +34,7 @@ import cy.agorise.graphenej.BlockData;
 import cy.agorise.graphenej.BrainKey;
 import cy.agorise.graphenej.Memo;
 import cy.agorise.graphenej.OperationType;
+import cy.agorise.graphenej.Price;
 import cy.agorise.graphenej.RPC;
 import cy.agorise.graphenej.Transaction;
 import cy.agorise.graphenej.UserAccount;
@@ -57,6 +58,8 @@ import cy.agorise.graphenej.api.calls.GetRequiredFees;
 import cy.agorise.graphenej.api.calls.GetTransaction;
 import cy.agorise.graphenej.api.calls.ListAssets;
 import cy.agorise.graphenej.errors.MalformedAddressException;
+import cy.agorise.graphenej.models.AssetFeed;
+import cy.agorise.graphenej.models.BitAssetData;
 import cy.agorise.graphenej.models.JsonRpcResponse;
 import cy.agorise.graphenej.operations.TransferOperation;
 import cy.agorise.graphenej.operations.TransferOperationBuilder;
@@ -185,7 +188,6 @@ public class PerformCallActivity extends ConnectedActivity {
 
                     @Override
                     public void accept(Object message) throws Exception {
-                        Log.d(TAG,"accept. Msg class: "+message.getClass());
                         if(message instanceof ConnectionStatusUpdate){
                             // TODO: Update UI ?
                         }else if(message instanceof JsonRpcResponse){
@@ -589,6 +591,11 @@ public class PerformCallActivity extends ConnectedActivity {
                     Transaction tx = (Transaction) response.result;
                     mResponseView.setText(mResponseView.getText() + String.format("[%s][%s]", tx.toString(), Util.bytesToHex(tx.getHash())));
                     break;
+                case RPC.CALL_GET_OBJECTS:
+                    List<BitAssetData> bitAssetDataArray = (List<BitAssetData>) response.result;
+                    BitAssetData bitAssetData = bitAssetDataArray.get(0);
+                    AssetFeed assetFeed = bitAssetData.getCurrentFeed();
+                    Price price = assetFeed.getSettlementPrice();
                 case RPC.CALL_GET_ACCOUNTS:
                 case RPC.CALL_GET_BLOCK:
                 case RPC.CALL_GET_BLOCK_HEADER:

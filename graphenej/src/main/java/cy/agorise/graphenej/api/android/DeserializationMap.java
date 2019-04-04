@@ -38,6 +38,8 @@ import cy.agorise.graphenej.api.calls.GetTransaction;
 import cy.agorise.graphenej.api.calls.ListAssets;
 import cy.agorise.graphenej.api.calls.LookupAssetSymbols;
 import cy.agorise.graphenej.models.AccountProperties;
+import cy.agorise.graphenej.models.AssetFeed;
+import cy.agorise.graphenej.models.BitAssetData;
 import cy.agorise.graphenej.models.Block;
 import cy.agorise.graphenej.models.BlockHeader;
 import cy.agorise.graphenej.models.BucketObject;
@@ -45,6 +47,7 @@ import cy.agorise.graphenej.models.DynamicGlobalProperties;
 import cy.agorise.graphenej.models.FullAccountDetails;
 import cy.agorise.graphenej.models.HistoryOperationDetail;
 import cy.agorise.graphenej.models.OperationHistory;
+import cy.agorise.graphenej.models.ReportedAssetFeed;
 import cy.agorise.graphenej.operations.CustomOperation;
 import cy.agorise.graphenej.operations.LimitOrderCreateOperation;
 import cy.agorise.graphenej.operations.TransferOperation;
@@ -125,6 +128,10 @@ public class DeserializationMap {
         mClassMap.put(GetObjects.class, List.class);
         Gson getObjectsGson = new GsonBuilder()
                 .registerTypeAdapter(Asset.class, new Asset.AssetDeserializer())
+                .registerTypeAdapter(BitAssetData.class, new BitAssetData.BitAssetDataDeserializer())
+                .registerTypeAdapter(ReportedAssetFeed.class, new ReportedAssetFeed.ReportedAssetFeedDeserializer())
+                .registerTypeAdapter(AssetFeed.class, new AssetFeed.AssetFeedDeserializer())
+                .registerTypeAdapter(AssetAmount.class, new AssetAmount.AssetAmountDeserializer())
                 .create();
         mGsonMap.put(GetObjects.class, getObjectsGson);
 

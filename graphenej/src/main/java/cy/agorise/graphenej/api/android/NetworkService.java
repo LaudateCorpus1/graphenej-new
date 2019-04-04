@@ -45,6 +45,7 @@ import cy.agorise.graphenej.api.calls.GetRequiredFees;
 import cy.agorise.graphenej.api.calls.ListAssets;
 import cy.agorise.graphenej.models.AccountProperties;
 import cy.agorise.graphenej.models.ApiCall;
+import cy.agorise.graphenej.models.BitAssetData;
 import cy.agorise.graphenej.models.Block;
 import cy.agorise.graphenej.models.BlockHeader;
 import cy.agorise.graphenej.models.BucketObject;
@@ -522,7 +523,6 @@ public class NetworkService extends Service {
          */
         private void handleJsonRpcResponse(JsonRpcResponse response, String text){
             JsonRpcResponse parsedResponse = null;
-
             Class requestClass = mRequestClassMap.get(response.id);
             if(requestClass != null){
                 // Removing the class entry in the map
@@ -621,8 +621,10 @@ public class NetworkService extends Service {
          * @param response  Response to a 'get_objects' API call
          */
         private JsonRpcResponse handleGetObject(String response){
-            //TODO: Implement a proper de-serialization logic
-            return null;
+            //TODO: Add support for other types of 'get_objects' request types
+            Gson gson = mDeserializationMap.getGson(GetObjects.class);
+            Type GetBitAssetResponse = new TypeToken<JsonRpcResponse<List<BitAssetData>>>(){}.getType();
+            return gson.fromJson(response, GetBitAssetResponse);
         }
 
         /**

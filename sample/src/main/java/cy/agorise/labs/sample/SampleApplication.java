@@ -23,8 +23,6 @@ public class SampleApplication extends Application {
         int requestedApis = ApiAccess.API_DATABASE | ApiAccess.API_HISTORY | ApiAccess.API_NETWORK_BROADCAST;
 
         String[] nodeURLs = new String[]{
-                "wss://miami.bitshares.apasia.tech/ws",
-                "wss://bitshares.crypto.fans/ws",
                 "wss://bitshares.openledger.info/ws",
                 "wss://us.nodes.bitshares.ws",
                 "wss://eu.nodes.bitshares.ws"
