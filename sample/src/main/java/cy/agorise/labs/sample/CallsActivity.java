@@ -26,6 +26,7 @@ public class CallsActivity extends AppCompatActivity {
     private final String TAG = this.getClass().getName();
 
     private static final String REMOVE_CURRENT_NODE = "remove_current_node";
+    private static final String TEST_BRAINKEY_DERIVATION = "test_brainkey_derivation";
 
     @BindView(R.id.call_list)
     RecyclerView mRecyclerView;
@@ -81,7 +82,8 @@ public class CallsActivity extends AppCompatActivity {
             RPC.CALL_GET_ACCOUNT_BALANCES,
             RPC.CALL_BROADCAST_TRANSACTION,
             RPC.CALL_GET_TRANSACTION,
-            REMOVE_CURRENT_NODE
+            REMOVE_CURRENT_NODE,
+            TEST_BRAINKEY_DERIVATION
         };
 
         @NonNull
@@ -104,7 +106,9 @@ public class CallsActivity extends AppCompatActivity {
                     intent = new Intent(CallsActivity.this, SubscriptionActivity.class);
                 } else if (selectedCall.equals(REMOVE_CURRENT_NODE)){
                     intent = new Intent(CallsActivity.this, RemoveNodeActivity.class);
-                }else{
+                } else if (selectedCall.equals(TEST_BRAINKEY_DERIVATION)){
+                    intent = new Intent(CallsActivity.this, BrainkeyActivity.class);
+                } else {
                     intent = new Intent(CallsActivity.this, PerformCallActivity.class);
                     intent.putExtra(Constants.KEY_SELECTED_CALL, selectedCall);
                 }

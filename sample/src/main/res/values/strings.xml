@@ -64,4 +64,10 @@
     <!-- GetAccountBalances -->
     <string name="get_account_balances_arg1">User account</string>
     <string name="get_account_balances_arg2">Comma-separated list of assets</string>
+    <string name="title_activity_brainkey">BrainkeyActivity</string>
+
+    <!-- BrainkeyActivity strings -->
+    <string name="hint_brainkey">Brainkey</string>
+    <string name="hint_pubkey">Desired public key / address</string>
+    <string name="button_generate">Generate public key</string>
 </resources>
