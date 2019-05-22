@@ -255,7 +255,7 @@ public class NetworkService extends Service {
      *                      constants specified in the ApiAccess class.
      * @return              The id of the message that was just sent, or -1 if no message was sent.
      */
-    public long sendMessage(ApiCallable apiCallable, int requiredApi){
+    public synchronized long sendMessage(ApiCallable apiCallable, int requiredApi){
         if(requiredApi != -1 && mApiIds.containsKey(requiredApi) || requiredApi == ApiAccess.API_NONE){
             int apiId = 0;
             if(requiredApi != ApiAccess.API_NONE)
