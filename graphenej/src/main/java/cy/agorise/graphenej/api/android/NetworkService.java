@@ -229,9 +229,13 @@ public class NetworkService extends Service {
                 .writeTimeout(5, TimeUnit.SECONDS)
                 .build();
         mSelectedNode = nodeProvider.getBestNode();
-        Log.v(TAG,"connect.url: "+ mSelectedNode.getUrl()+", latency: "+mSelectedNode.getLatencyValue());
-        Request request = new Request.Builder().url(mSelectedNode.getUrl()).build();
-        mWebSocket = client.newWebSocket(request, mWebSocketListener);
+        if(mSelectedNode != null){
+            Request request = new Request.Builder().url(mSelectedNode.getUrl()).build();
+            mWebSocket = client.newWebSocket(request, mWebSocketListener);
+        }else{
+            // If no node could be found yet, schedule a new attempt in DEFAULT_INITIAL_DELAY ms
+            mHandler.postDelayed(mConnectAttempt, DEFAULT_INITIAL_DELAY);
+        }
     }
 
     public long sendMessage(String message){
