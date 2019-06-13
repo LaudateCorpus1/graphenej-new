@@ -203,4 +203,8 @@ public class NodeLatencyVerifier {
             }
         }
     }
+
+    public List<FullNode> getNodeList(){
+        return mNodeList;
+    }
 }

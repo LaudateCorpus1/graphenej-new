@@ -230,9 +230,11 @@ public class NetworkService extends Service {
                 .build();
         mSelectedNode = nodeProvider.getBestNode();
         if(mSelectedNode != null){
+            Log.d(TAG,"Trying to connect to: "+ mSelectedNode.getUrl());
             Request request = new Request.Builder().url(mSelectedNode.getUrl()).build();
             mWebSocket = client.newWebSocket(request, mWebSocketListener);
         }else{
+            Log.d(TAG,"Could not find best node, reescheduling");
             // If no node could be found yet, schedule a new attempt in DEFAULT_INITIAL_DELAY ms
             mHandler.postDelayed(mConnectAttempt, DEFAULT_INITIAL_DELAY);
         }
@@ -797,4 +799,6 @@ public class NetworkService extends Service {
     public PublishSubject<FullNode> getNodeLatencyObservable(){
         return fullNodePublishSubject;
     }
+
+    public NodeLatencyVerifier getNodeLatencyVerifier(){ return nodeLatencyVerifier; }
 }

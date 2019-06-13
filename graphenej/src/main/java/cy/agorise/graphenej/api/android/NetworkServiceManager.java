@@ -54,7 +54,8 @@ public class NetworkServiceManager implements Application.ActivityLifecycleCallb
     private List<String> mCustomNodeUrls = new ArrayList<>();
     private boolean mAutoConnect;
     private boolean mVerifyLatency;
-    private double alpha;
+    // Flag used to make sure we only call 'bindService' once.
+    private boolean mStartingService;
 
     /**
      * Runnable used to schedule a service disconnection once the app is not visible to the user for
@@ -85,7 +86,9 @@ public class NetworkServiceManager implements Application.ActivityLifecycleCallb
     @Override
     public void onActivityResumed(Activity activity) {
         mHandler.removeCallbacks(mDisconnectRunnable);
-        if(mService == null){
+        if(mService == null && !mStartingService){
+            // Setting this flag to 'true' to avoid repeated calls to the bindService.
+            mStartingService = true;
             // Creating a new Intent that will be used to start the NetworkService
             Context context = mContextReference.get();
             Intent intent = new Intent(context, NetworkService.class);
@@ -143,12 +146,15 @@ public class NetworkServiceManager implements Application.ActivityLifecycleCallb
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             NetworkService.LocalBinder binder = (NetworkService.LocalBinder) service;
             mService = binder.getService();
-
+            // Setting the 'starting service' flag back to false
+            mStartingService = false;
             passRequiredInfoToConfigureService();
         }
 
         @Override
-        public void onServiceDisconnected(ComponentName componentName) {}
+        public void onServiceDisconnected(ComponentName componentName) {
+            mStartingService = false;
+        }
     };
 
     public String getUserName() {
