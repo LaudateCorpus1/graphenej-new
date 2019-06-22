@@ -55,7 +55,7 @@ public class NetworkServiceManager implements Application.ActivityLifecycleCallb
     private boolean mAutoConnect;
     private boolean mVerifyLatency;
     // Flag used to make sure we only call 'bindService' once.
-    private boolean mStartingService;
+//    private boolean mStartingService;
 
     /**
      * Runnable used to schedule a service disconnection once the app is not visible to the user for
@@ -86,9 +86,7 @@ public class NetworkServiceManager implements Application.ActivityLifecycleCallb
     @Override
     public void onActivityResumed(Activity activity) {
         mHandler.removeCallbacks(mDisconnectRunnable);
-        if(mService == null && !mStartingService){
-            // Setting this flag to 'true' to avoid repeated calls to the bindService.
-            mStartingService = true;
+        if(mService == null){
             // Creating a new Intent that will be used to start the NetworkService
             Context context = mContextReference.get();
             Intent intent = new Intent(context, NetworkService.class);
@@ -145,15 +143,19 @@ public class NetworkServiceManager implements Application.ActivityLifecycleCallb
                                        IBinder service) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             NetworkService.LocalBinder binder = (NetworkService.LocalBinder) service;
-            mService = binder.getService();
-            // Setting the 'starting service' flag back to false
-            mStartingService = false;
-            passRequiredInfoToConfigureService();
+            boolean passInfo = false;
+            if(mService == null){
+                mService = binder.getService();
+                // We only pass the required information in case this is the first time we get a reference
+                // to the NetworkService instance.
+                passInfo = true;
+            }
+            if(passInfo)
+                passRequiredInfoToConfigureService();
         }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
-            mStartingService = false;
         }
     };
 
