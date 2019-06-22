@@ -90,7 +90,7 @@ public class NetworkService extends Service {
     // Default connection delay when using the node latency verification strategy. This initial
     // delay is required in order ot make sure we have a fair selection of node latencies from
     // which we can choose from.
-    private final int DEFAULT_INITIAL_DELAY = 2000;
+    private final int DEFAULT_INITIAL_DELAY = 500;
 
     /**
      * Constant to be used as a key in order to pass the user name information, in case the
