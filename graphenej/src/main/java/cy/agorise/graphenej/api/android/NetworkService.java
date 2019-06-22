@@ -169,8 +169,6 @@ public class NetworkService extends Service {
     private String mLastCall;
     private long mCurrentId = 0;
 
-    private boolean mAutoConnect;
-
     // Requested APIs passed to this service
     private int mRequestedApis;
 
@@ -311,7 +309,7 @@ public class NetworkService extends Service {
         mUsername = extras.getString(NetworkService.KEY_USERNAME, "");
         mPassword = extras.getString(NetworkService.KEY_PASSWORD, "");
         mRequestedApis = extras.getInt(NetworkService.KEY_REQUESTED_APIS, 0);
-        mAutoConnect = extras.getBoolean(NetworkService.KEY_AUTO_CONNECT, true);
+        boolean mAutoConnect = extras.getBoolean(NetworkService.KEY_AUTO_CONNECT, true);
         boolean verifyNodeLatency = extras.getBoolean(NetworkService.KEY_ENABLE_LATENCY_VERIFIER, false);
 
         // If the user of the library desires, a custom list of node URLs can
@@ -329,26 +327,27 @@ public class NetworkService extends Service {
             nodeProvider.addNode(new FullNode(nodeUrl));
         }
 
-        // We only connect automatically if the auto-connect flag is true AND
-        // we are not going to care about node latency ordering.
-        if(mAutoConnect && !verifyNodeLatency) {
-            connect();
-        }else{
-            // In case we care about node latency ordering, we must first obtain
-            // a first round of measurements in order to be sure to select the
-            // best node.
-            if(verifyNodeLatency){
-                double alpha = extras.getDouble(KEY_NODE_LATENCY_SMOOTHING_FACTOR, ExponentialMovingAverage.DEFAULT_ALPHA);
-                ArrayList<FullNode> fullNodes = new ArrayList<>();
-                for(String url : urls){
-                    fullNodes.add(new FullNode(url, alpha));
-                }
-                nodeLatencyVerifier = new NodeLatencyVerifier(fullNodes);
-                fullNodePublishSubject = nodeLatencyVerifier.start();
-                fullNodePublishSubject.observeOn(AndroidSchedulers.mainThread()).subscribe(nodeLatencyObserver);
-                mHandler.postDelayed(mConnectAttempt, DEFAULT_INITIAL_DELAY);
-            }
+        if (!mAutoConnect && !verifyNodeLatency) {
+            throw new IllegalArgumentException("NetworkService$bootstrapService: verifyNodeLatency cannot be false when autoConnect is false too.");
         }
+
+        if (verifyNodeLatency) {
+            double alpha = extras.getDouble(KEY_NODE_LATENCY_SMOOTHING_FACTOR, ExponentialMovingAverage.DEFAULT_ALPHA);
+            ArrayList<FullNode> fullNodes = new ArrayList<>();
+            for(String url : urls){
+                fullNodes.add(new FullNode(url, alpha));
+            }
+            nodeLatencyVerifier = new NodeLatencyVerifier(fullNodes);
+            fullNodePublishSubject = nodeLatencyVerifier.start();
+            fullNodePublishSubject.observeOn(AndroidSchedulers.mainThread()).subscribe(nodeLatencyObserver);
+        }
+
+        if (mAutoConnect)
+            connect();
+        else
+            mHandler.postDelayed(mConnectAttempt, DEFAULT_INITIAL_DELAY);
+
+        // TODO make sure (verifyNodeLatency==false && mAutoConnect==true) is a valid/useful combination, else simplify and use only one of those arguments
     }
 
     /**
@@ -730,7 +729,7 @@ public class NetworkService extends Service {
 
                     // Remove node from nodeLatencyVerifier, so that it publishes its removal
                     nodeLatencyVerifier.removeNode(mSelectedNode);
-                // Avoid crash #133
+                    // Avoid crash #133
                 } else if (mSelectedNode != null){
                     // Adding a very high latency value to this node in order to prevent
                     // us from getting it again
