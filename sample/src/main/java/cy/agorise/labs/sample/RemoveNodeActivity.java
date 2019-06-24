@@ -68,9 +68,9 @@ public class RemoveNodeActivity extends AppCompatActivity implements ServiceConn
         rvNodes.setAdapter(nodesAdapter);
     }
 
-    @OnClick(R.id.btnRemoveCurrentNode)
+    @OnClick(R.id.btnReconnectNode)
     public void removeCurrentNode() {
-        mNetworkService.removeCurrentNodeAndReconnect();
+        mNetworkService.reconnectNode();
     }
 
     @Override

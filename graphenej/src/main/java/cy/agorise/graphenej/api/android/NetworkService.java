@@ -351,10 +351,9 @@ public class NetworkService extends Service {
     }
 
     /**
-     * Public method that can be called from classes that bind to the service and find out that
-     * for any reason want the service to connect to a different node.
+     * Used to close the current connection and cause the service to attempt a reconnection.
      */
-    public void removeCurrentNodeAndReconnect() {
+    public void reconnectNode() {
         mWebSocket.close(GOING_AWAY_STATUS, null);
     }
 
@@ -669,10 +668,8 @@ public class NetworkService extends Service {
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
             super.onClosed(webSocket, code, reason);
-            Log.d(TAG,"onClosed");
-
-            if (code == GOING_AWAY_STATUS)
-                handleWebSocketDisconnection(true, true);
+            if(code == GOING_AWAY_STATUS)
+                handleWebSocketDisconnection(true, false);
             else
                 handleWebSocketDisconnection(false, false);
         }
@@ -691,7 +688,7 @@ public class NetworkService extends Service {
                 Log.e(TAG,"Response: "+response.message());
             }
 
-            handleWebSocketDisconnection(true, false);
+            handleWebSocketDisconnection(true, true);
         }
 
         /**
@@ -699,9 +696,10 @@ public class NetworkService extends Service {
          * potentially tries to reconnect to another one.
          *
          * @param tryReconnection       States if a reconnection to other node should be tried.
-         * @param removeSelectedNode    States if the current node should be removed from the nodes list.
+         * @param penalizeNode          Whether or not to penalize the current node with a very high latency reading.
          */
-        private void handleWebSocketDisconnection(boolean tryReconnection, boolean removeSelectedNode) {
+        private void handleWebSocketDisconnection(boolean tryReconnection, boolean penalizeNode) {
+            Log.d(TAG,"handleWebSocketDisconnection. try reconnection: " + tryReconnection + ", penalizeNode: " + penalizeNode);
             RxBus.getBusInstance().send(new ConnectionStatusUpdate(ConnectionStatusUpdate.DISCONNECTED, ApiAccess.API_NONE));
 
             isLoggedIn = false;
@@ -716,26 +714,19 @@ public class NetworkService extends Service {
                 // Updating the selected node's 'connected' status on the NodeLatencyVerifier instance
                 if(nodeLatencyVerifier != null)
                     nodeLatencyVerifier.updateActiveNodeInformation(mSelectedNode);
+
+                if (penalizeNode){
+                    // Adding a very high latency value to this node in order to prevent
+                    // us from getting it again
+                    mSelectedNode.addLatencyValue(Long.MAX_VALUE);
+                    nodeProvider.updateNode(mSelectedNode);
+                }
             }
 
             if(tryReconnection) {
                 // Registering current status
                 mCurrentId = 0;
                 mApiIds.clear();
-
-                if (removeSelectedNode && mSelectedNode != null) {
-                    // Remove node from node provider so that it is not returned for following connections
-                    nodeProvider.removeNode(mSelectedNode);
-
-                    // Remove node from nodeLatencyVerifier, so that it publishes its removal
-                    nodeLatencyVerifier.removeNode(mSelectedNode);
-                    // Avoid crash #133
-                } else if (mSelectedNode != null){
-                    // Adding a very high latency value to this node in order to prevent
-                    // us from getting it again
-                    mSelectedNode.addLatencyValue(Long.MAX_VALUE);
-                    nodeProvider.updateNode(mSelectedNode);
-                }
 
                 RxBus.getBusInstance().send(new ConnectionStatusUpdate(ConnectionStatusUpdate.DISCONNECTED, ApiAccess.API_NONE));
 
@@ -746,7 +737,6 @@ public class NetworkService extends Service {
                     mHandler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
-                            Log.d(TAG, "Retrying");
                             connect();
                         }
                     }, DEFAULT_RETRY_DELAY);

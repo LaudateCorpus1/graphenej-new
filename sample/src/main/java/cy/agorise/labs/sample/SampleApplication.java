@@ -25,7 +25,9 @@ public class SampleApplication extends Application {
         String[] nodeURLs = new String[]{
                 "wss://bitshares.openledger.info/ws",
                 "wss://us.nodes.bitshares.ws",
-                "wss://eu.nodes.bitshares.ws"
+                "wss://eu.nodes.bitshares.ws",
+                "wss://citadel.li/node",
+                "wss://api.bts.mobi/ws"
         };
         List<String> nodeList = Arrays.asList(nodeURLs);
         String nodes = join(nodeList, ",");
