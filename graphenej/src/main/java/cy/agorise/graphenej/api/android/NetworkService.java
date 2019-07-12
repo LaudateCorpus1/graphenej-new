@@ -226,15 +226,18 @@ public class NetworkService extends Service {
                 .readTimeout(5, TimeUnit.SECONDS)
                 .writeTimeout(5, TimeUnit.SECONDS)
                 .build();
-        mSelectedNode = nodeProvider.getBestNode();
-        if(mSelectedNode != null){
-            Log.d(TAG,"Trying to connect to: "+ mSelectedNode.getUrl());
-            Request request = new Request.Builder().url(mSelectedNode.getUrl()).build();
-            mWebSocket = client.newWebSocket(request, mWebSocketListener);
-        }else{
-            Log.d(TAG,"Could not find best node, reescheduling");
-            // If no node could be found yet, schedule a new attempt in DEFAULT_INITIAL_DELAY ms
-            mHandler.postDelayed(mConnectAttempt, DEFAULT_INITIAL_DELAY);
+
+        synchronized (mWebSocketListener){
+            mSelectedNode = nodeProvider.getBestNode();
+            if(mSelectedNode != null){
+                Log.d(TAG,"Trying to connect to: "+ mSelectedNode.getUrl());
+                Request request = new Request.Builder().url(mSelectedNode.getUrl()).build();
+                mWebSocket = client.newWebSocket(request, mWebSocketListener);
+            }else{
+                Log.d(TAG,"Could not find best node, reescheduling");
+                // If no node could be found yet, schedule a new attempt in DEFAULT_INITIAL_DELAY ms
+                mHandler.postDelayed(mConnectAttempt, DEFAULT_INITIAL_DELAY);
+            }
         }
     }
 
@@ -416,7 +419,7 @@ public class NetworkService extends Service {
     private WebSocketListener mWebSocketListener = new WebSocketListener() {
 
         @Override
-        public void onOpen(WebSocket webSocket, Response response) {
+        public synchronized void onOpen(WebSocket webSocket, Response response) {
             super.onOpen(webSocket, response);
 
             // Marking the selected node as connected
@@ -441,7 +444,7 @@ public class NetworkService extends Service {
         }
 
         @Override
-        public void onMessage(WebSocket webSocket, String text) {
+        public synchronized void onMessage(WebSocket webSocket, String text) {
             super.onMessage(webSocket, text);
             Log.v(TAG,"<- "+text);
             JsonRpcNotification notification = gson.fromJson(text, JsonRpcNotification.class);
@@ -698,10 +701,9 @@ public class NetworkService extends Service {
          * @param tryReconnection       States if a reconnection to other node should be tried.
          * @param penalizeNode          Whether or not to penalize the current node with a very high latency reading.
          */
-        private void handleWebSocketDisconnection(boolean tryReconnection, boolean penalizeNode) {
+        private synchronized void handleWebSocketDisconnection(boolean tryReconnection, boolean penalizeNode) {
             Log.d(TAG,"handleWebSocketDisconnection. try reconnection: " + tryReconnection + ", penalizeNode: " + penalizeNode);
             RxBus.getBusInstance().send(new ConnectionStatusUpdate(ConnectionStatusUpdate.DISCONNECTED, ApiAccess.API_NONE));
-
             isLoggedIn = false;
 
             // Clearing previous request id to class mappings
