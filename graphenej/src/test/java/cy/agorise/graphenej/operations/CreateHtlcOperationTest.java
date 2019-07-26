@@ -2,6 +2,8 @@ package cy.agorise.graphenej.operations;
 
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.UnsignedLong;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,6 +29,7 @@ import cy.agorise.graphenej.Util;
 public class CreateHtlcOperationTest {
     private final String SERIALIZED_OP = "0000000000000000007b7c80241100000000000000a06e327ea7388c18e4740e350ed4e60f2e04fc41c8007800000000";
     private final String SERIALIZED_TX = "f68585abf4dce7c8045701310000000000000000007b7c80241100000000000000a06e327ea7388c18e4740e350ed4e60f2e04fc41c800780000000000";
+    private final String JSON_SERIALIZED_TX = "{\"expiration\":\"2016-04-06T08:29:27\",\"extensions\":[],\"operations\":[[49,{\"amount\":{\"amount\":1123456,\"asset_id\":\"1.3.0\"},\"claim_period_seconds\":120,\"extensions\":[],\"fee\":{\"amount\":0,\"asset_id\":\"1.3.0\"},\"from\":\"1.2.123\",\"preimage_hash\":[0,\"a06e327ea7388c18e4740e350ed4e60f2e04fc41\"],\"preimage_size\":200,\"to\":\"1.2.124\"}]],\"ref_block_num\":34294,\"ref_block_prefix\":3707022213,\"signatures\":[]}";
     private final String PREIMAGE_HEX = "666f6f626172";
     private final String HASH_RIPEMD160 = "a06e327ea7388c18e4740e350ed4e60f2e04fc41";
     private final String HASH_SHA1 = "8843d7f92416211de9ebb963ff4ce28125932878";
@@ -93,8 +96,19 @@ public class CreateHtlcOperationTest {
         ArrayList<BaseOperation> operations = new ArrayList<>();
         operations.add(buildCreateHtlcOperation());
         Transaction transaction = new Transaction(blockData, operations);
+        // Checking byte serialization
         byte[] txBytes = transaction.toBytes();
         byte[] expected = Bytes.concat(Util.hexToBytes(Chains.BITSHARES.CHAIN_ID), Util.hexToBytes(SERIALIZED_TX));
         Assert.assertArrayEquals(expected, txBytes);
+        // Checking JSON serialization
+        JsonObject jsonObject = transaction.toJsonObject();
+        JsonArray operationsArray = jsonObject.get("operations").getAsJsonArray().get(0).getAsJsonArray();
+        JsonArray hashArray = operationsArray.get(1).getAsJsonObject().get("preimage_hash").getAsJsonArray();
+        Assert.assertEquals("2016-04-06T08:29:27", jsonObject.get("expiration").getAsString());
+        Assert.assertEquals(49, operationsArray.get(0).getAsInt());
+        Assert.assertEquals("1.2.123", operationsArray.get(1).getAsJsonObject().get("from").getAsString());
+        Assert.assertEquals("1.2.124", operationsArray.get(1).getAsJsonObject().get("to").getAsString());
+        Assert.assertEquals(0, hashArray.get(0).getAsInt());
+        Assert.assertEquals(HASH_RIPEMD160, hashArray.get(1).getAsString());
     }
 }

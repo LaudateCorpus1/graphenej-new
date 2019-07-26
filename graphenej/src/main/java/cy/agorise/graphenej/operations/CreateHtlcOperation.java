@@ -1,6 +1,10 @@
 package cy.agorise.graphenej.operations;
 
 import com.google.common.primitives.Bytes;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import cy.agorise.graphenej.AssetAmount;
 import cy.agorise.graphenej.BaseOperation;
@@ -10,6 +14,13 @@ import cy.agorise.graphenej.UserAccount;
 import cy.agorise.graphenej.Util;
 
 public class CreateHtlcOperation extends BaseOperation {
+    static final String KEY_FROM = "from";
+    static final String KEY_TO = "to";
+    static final String KEY_AMOUNT = "amount";
+    static final String KEY_PREIMAGE_HASH = "preimage_hash";
+    static final String KEY_PREIMAGE_SIZE = "preimage_size";
+    static final String KEY_CLAIM_PERIOD_SECONDS = "claim_period_seconds";
+
     private AssetAmount fee;
     private UserAccount from;
     private UserAccount to;
@@ -111,7 +122,25 @@ public class CreateHtlcOperation extends BaseOperation {
     }
 
     @Override
+    public JsonElement toJsonObject() {
+        JsonArray array = new JsonArray();
+        array.add(this.getId());
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add(KEY_FEE, fee.toJsonObject());
+        jsonObject.addProperty(KEY_FROM, from.getObjectId());
+        jsonObject.addProperty(KEY_TO, to.getObjectId());
+        jsonObject.add(KEY_AMOUNT, amount.toJsonObject());
+        jsonObject.add(KEY_PREIMAGE_HASH, preimageHash.toJsonObject());
+        jsonObject.addProperty(KEY_PREIMAGE_SIZE, preimageSize);
+        jsonObject.addProperty(KEY_CLAIM_PERIOD_SECONDS, claimPeriodSeconds);
+        jsonObject.add(KEY_EXTENSIONS, new JsonArray());
+        array.add(jsonObject);
+        return array;
+    }
+
+    @Override
     public String toJsonString() {
-        return null;
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        return gsonBuilder.create().toJson(this);
     }
 }
