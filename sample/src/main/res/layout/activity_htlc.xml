@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".HtlcActivity">
+    <fragment android:name="cy.agorise.labs.sample.fragments.PrintResponseFragment"
+        android:id="@+id/fragment_print_response"
+        android:layout_weight="0.4"
+        android:layout_height="0dp"
+        android:layout_width="match_parent"/>
+    <fragment android:name="cy.agorise.labs.sample.fragments.CreateHtlcFragment"
+        android:id="@+id/fragment_htlc_parameters"
+        android:layout_weight="0.6"
+        android:layout_height="0dp"
+        android:layout_width="match_parent"/>
+</LinearLayout>

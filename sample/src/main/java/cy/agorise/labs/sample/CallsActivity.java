@@ -27,6 +27,7 @@ public class CallsActivity extends AppCompatActivity {
 
     private static final String RECONNECT_NODE = "reconnect_node";
     private static final String TEST_BRAINKEY_DERIVATION = "test_brainkey_derivation";
+    private static final String CREATE_HTLC = "create_htlc";
 
     @BindView(R.id.call_list)
     RecyclerView mRecyclerView;
@@ -83,7 +84,8 @@ public class CallsActivity extends AppCompatActivity {
             RPC.CALL_BROADCAST_TRANSACTION,
             RPC.CALL_GET_TRANSACTION,
             RECONNECT_NODE,
-            TEST_BRAINKEY_DERIVATION
+            TEST_BRAINKEY_DERIVATION,
+            CREATE_HTLC
         };
 
         @NonNull
@@ -108,7 +110,9 @@ public class CallsActivity extends AppCompatActivity {
                     intent = new Intent(CallsActivity.this, RemoveNodeActivity.class);
                 } else if (selectedCall.equals(TEST_BRAINKEY_DERIVATION)){
                     intent = new Intent(CallsActivity.this, BrainkeyActivity.class);
-                } else {
+                } else if (selectedCall.equals(CREATE_HTLC)){
+                    intent = new Intent(CallsActivity.this, HtlcActivity.class);
+                }else {
                     intent = new Intent(CallsActivity.this, PerformCallActivity.class);
                     intent.putExtra(Constants.KEY_SELECTED_CALL, selectedCall);
                 }
