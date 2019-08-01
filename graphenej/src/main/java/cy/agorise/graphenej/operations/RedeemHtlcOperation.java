@@ -85,7 +85,8 @@ public class RedeemHtlcOperation extends BaseOperation {
             e.printStackTrace();
         }
         byte[] preimageLength = byteArrayOutputStream.toByteArray();
-        return Bytes.concat(feeBytes, htlcBytes, redeemerBytes, preimageLength, this.preimage);
+        byte[] extensionsBytes = extensions.toBytes();
+        return Bytes.concat(feeBytes, htlcBytes, redeemerBytes, preimageLength, this.preimage, extensionsBytes);
     }
 
     @Override
@@ -94,7 +95,7 @@ public class RedeemHtlcOperation extends BaseOperation {
         array.add(this.getId());
         JsonObject jsonObject = new JsonObject();
         jsonObject.add(KEY_FEE, fee.toJsonObject());
-        jsonObject.add(KEY_REDEEMER, this.redeemer.toJsonObject());
+        jsonObject.addProperty(KEY_REDEEMER, this.redeemer.getObjectId());
         jsonObject.addProperty(KEY_PREIMAGE, Util.bytesToHex(this.preimage));
         jsonObject.addProperty(KEY_HTLC_ID, this.htlc.getObjectId());
         jsonObject.add(KEY_EXTENSIONS, new JsonArray());
