@@ -5,7 +5,6 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.design.widget.TextInputEditText;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,8 +33,8 @@ public class CreateHtlcFragment extends Fragment {
     @BindView(R.id.timelock)
     TextInputEditText timelockField;
 
-    // Parent activity, which must implement the HtlcListener interface.
-    private HtlcListener mListener;
+    // Parent activity, which must implement the CreateHtlcListener interface.
+    private CreateHtlcListener mListener;
 
     public CreateHtlcFragment() {
         // Required empty public constructor
@@ -52,7 +51,6 @@ public class CreateHtlcFragment extends Fragment {
 
     @OnClick(R.id.button_create)
     public void onSendClicked(View v){
-        Log.d(TAG,"onSendClicked");
         String from = fromField.getText().toString();
         String to = toField.getText().toString();
         Double amount = null;
@@ -67,7 +65,6 @@ public class CreateHtlcFragment extends Fragment {
         }catch(NumberFormatException e){
             timelockField.setError("Invalid value");
         }
-        Log.d(TAG,"amount: " + amount + ", timelock: " + timeLock);
         if(amount != null && timeLock != null){
             Toast.makeText(getContext(), "Should be sending message up", Toast.LENGTH_SHORT).show();
             mListener.onHtlcProposal(from, to, amount, timeLock);
@@ -77,17 +74,17 @@ public class CreateHtlcFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        if(context instanceof HtlcListener){
-            mListener = (HtlcListener) context;
+        if(context instanceof CreateHtlcListener){
+            mListener = (CreateHtlcListener) context;
         }else{
-            throw new ClassCastException(context.toString() + " must implement the HtlcListener interface!");
+            throw new ClassCastException(context.toString() + " must implement the CreateHtlcListener interface!");
         }
     }
 
     /**
      * Interface to be implemented by the parent activity.
      */
-    public interface HtlcListener {
+    public interface CreateHtlcListener {
         /**
          * Method used to notify the parent activity of the request to create an HTLC with the following parameters.
          *

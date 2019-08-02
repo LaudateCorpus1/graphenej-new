@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_margin="16dp"
+    android:clickable="false"
     tools:context=".fragments.CreateHtlcFragment">
     <android.support.design.widget.TextInputLayout
         android:id="@+id/container_from"
@@ -32,7 +33,7 @@
             android:id="@+id/to"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="1.2.153769" />
+            android:text="1.2.143563" />
     </android.support.design.widget.TextInputLayout>
     <android.support.design.widget.TextInputLayout
         android:id="@+id/container_amount"

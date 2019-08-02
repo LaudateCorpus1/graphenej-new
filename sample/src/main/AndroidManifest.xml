@@ -14,7 +14,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".HtlcActivity"></activity>
+        <activity android:name=".HtlcActivity"
+            android:theme="@style/AppTheme.NoActionBar"/>
         <activity
             android:name=".BrainkeyActivity"
             android:label="@string/title_activity_brainkey"
