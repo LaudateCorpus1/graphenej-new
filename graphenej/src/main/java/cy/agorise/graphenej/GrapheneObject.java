@@ -80,6 +80,8 @@ public class GrapheneObject {
                         return ObjectType.WORKER_OBJECT;
                     case 15:
                         return ObjectType.BALANCE_OBJECT;
+                    case 16:
+                        return ObjectType.HTLC_OBJECT;
                 }
             case IMPLEMENTATION_SPACE:
                 switch(type){

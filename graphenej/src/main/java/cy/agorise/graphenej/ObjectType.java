@@ -20,6 +20,7 @@ public enum ObjectType {
     VESTING_BALANCE_OBJECT,
     WORKER_OBJECT,
     BALANCE_OBJECT,
+    HTLC_OBJECT,
     GLOBAL_PROPERTY_OBJECT,
     DYNAMIC_GLOBAL_PROPERTY_OBJECT,
     ASSET_DYNAMIC_DATA,
@@ -53,6 +54,7 @@ public enum ObjectType {
             case VESTING_BALANCE_OBJECT:
             case WORKER_OBJECT:
             case BALANCE_OBJECT:
+            case HTLC_OBJECT:
                 space = 1;
                 break;
             case GLOBAL_PROPERTY_OBJECT:
@@ -123,6 +125,8 @@ public enum ObjectType {
             case BALANCE_OBJECT:
                 type = 15;
                 break;
+            case HTLC_OBJECT:
+                type = 16;
             case GLOBAL_PROPERTY_OBJECT:
                 type = 0;
                 break;

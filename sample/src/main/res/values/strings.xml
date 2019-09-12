@@ -70,4 +70,14 @@
     <string name="hint_brainkey">Brainkey</string>
     <string name="hint_pubkey">Desired public key / address</string>
     <string name="button_generate">Generate public key</string>
+
+    <!-- CreateHtlcFragment strings -->
+    <string name="hint_from">From account</string>
+    <string name="hint_to">To account</string>
+    <string name="hint_amount">Amount</string>
+    <string name="hint_timelock">Time to lock (in seconds)</string>
+
+    <!-- RedeemHtlcFragment strings -->
+    <string name="hint_redeemer">Redeemer user id</string>
+    <string name="hint_htlc_id">HTLC id</string>
 </resources>

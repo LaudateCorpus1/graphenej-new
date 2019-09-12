@@ -2,14 +2,25 @@ package cy.agorise.graphenej;
 
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.UnsignedLong;
+
 import org.spongycastle.crypto.DataLengthException;
 import org.spongycastle.crypto.InvalidCipherTextException;
+import org.spongycastle.crypto.digests.GeneralDigest;
+import org.spongycastle.crypto.digests.RIPEMD160Digest;
+import org.spongycastle.crypto.digests.SHA1Digest;
+import org.spongycastle.crypto.digests.SHA256Digest;
 import org.spongycastle.crypto.engines.AESFastEngine;
 import org.spongycastle.crypto.modes.CBCBlockCipher;
 import org.spongycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.spongycastle.crypto.params.KeyParameter;
 import org.spongycastle.crypto.params.ParametersWithIV;
-import org.tukaani.xz.*;
+import org.tukaani.xz.CorruptedInputException;
+import org.tukaani.xz.FinishableOutputStream;
+import org.tukaani.xz.LZMA2Options;
+import org.tukaani.xz.LZMAInputStream;
+import org.tukaani.xz.LZMAOutputStream;
+import org.tukaani.xz.XZInputStream;
+import org.tukaani.xz.XZOutputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -377,5 +388,37 @@ public class Util {
      */
     public static long toBase(double value, int precision){
         return (long) (value * Math.pow(10, precision));
+    }
+
+    /**
+     * Creates a hash for HTLC operations.
+     *
+     * @param preimage The data we want to operate on.
+     * @param hashType The type of hash.
+     * @return The hash.
+     * @throws NoSuchAlgorithmException
+     */
+    public static byte[] htlcHash(byte[] preimage, HtlcHashType hashType) throws NoSuchAlgorithmException {
+        byte[] out = null;
+        GeneralDigest digest = null;
+        switch(hashType){
+            case RIPEMD160:
+                digest = new RIPEMD160Digest();
+                out = new byte[20];
+                break;
+            case SHA1:
+                digest = new SHA1Digest();
+                out = new byte[20];
+                break;
+            case SHA256:
+                digest = new SHA256Digest();
+                out = new byte[32];
+                break;
+            default:
+                throw new IllegalArgumentException("Not supported hash function!");
+        }
+        digest.update(preimage, 0, preimage.length);
+        digest.doFinal(out, 0);
+        return out;
     }
 }

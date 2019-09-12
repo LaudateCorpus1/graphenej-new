@@ -417,6 +417,26 @@ public class Transaction implements ByteSerializable, JsonSerializable {
                         //TODO: Add operation deserialization support
                     } else if (operationId == OperationType.ASSET_CLAIM_FEES_OPERATION.ordinal()) {
                         //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.FBA_DISTRIBUTE_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.BID_COLLATERAL_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.EXECUTE_BID_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.ASSET_CLAIM_POOL_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.ASSET_UPDATE_ISSUER_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.HTLC_CREATE_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.HTLC_REDEEM_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.HTLC_REDEEMED_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.HTLC_EXTEND_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.HTLC_REFUND_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
                     }
                     if (operation != null) operationList.add(operation);
                     operation = null;
