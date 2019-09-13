@@ -1,9 +1,7 @@
 package cy.agorise.labs.sample;
 
-import android.content.ComponentName;
 import android.content.res.Resources;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.text.InputType;
@@ -418,12 +416,14 @@ public class PerformCallActivity extends ConnectedActivity {
     }
 
     private void sendGetObjectsRequest(){
+        Log.d(TAG,"sendGetObjectsRequest");
         String objectId = param1.getText().toString();
         if(objectId.matches("\\d\\.\\d{1,3}\\.\\d{1,10}")){
             ArrayList<String> array = new ArrayList<>();
             array.add(objectId);
             GetObjects getObjects = new GetObjects(array);
             long id = mNetworkService.sendMessage(getObjects, GetObjects.REQUIRED_API);
+            Log.d(TAG,"sendGetObnjetcsRequest id: "+id);
             responseMap.put(id, mRPC);
         }else{
             param1.setError(getResources().getString(R.string.error_input_id));
@@ -638,15 +638,5 @@ public class PerformCallActivity extends ConnectedActivity {
         super.onDestroy();
         if(!mDisposable.isDisposed())
             mDisposable.dispose();
-    }
-
-    @Override
-    public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-        // Called upon NetworkService connection
-    }
-
-    @Override
-    public void onServiceDisconnected(ComponentName componentName) {
-        // Called upon NetworkService disconnection
     }
 }

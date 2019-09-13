@@ -1,13 +1,7 @@
 package cy.agorise.graphenej.api.android;
 
-import android.app.Service;
-import android.content.Intent;
-import android.os.Binder;
-import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Looper;
-import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -62,10 +56,8 @@ import cy.agorise.graphenej.network.NodeProvider;
 import cy.agorise.graphenej.operations.CustomOperation;
 import cy.agorise.graphenej.operations.LimitOrderCreateOperation;
 import cy.agorise.graphenej.operations.TransferOperation;
-import cy.agorise.graphenej.stats.ExponentialMovingAverage;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.annotations.Nullable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 import okhttp3.OkHttpClient;
@@ -75,12 +67,10 @@ import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 
 /**
- * Service in charge of maintaining a connection to the full node.
+ * Class in charge of maintaining a connection to the full node.
  */
 
-public class NetworkService extends Service {
-    private final String TAG = this.getClass().getName();
-
+public class NetworkService {
     public static final int NORMAL_CLOSURE_STATUS = 1000;
     private static final int GOING_AWAY_STATUS = 1001;
 
@@ -91,72 +81,6 @@ public class NetworkService extends Service {
     // delay is required in order ot make sure we have a fair selection of node latencies from
     // which we can choose from.
     private final int DEFAULT_INITIAL_DELAY = 500;
-
-    /**
-     * Constant to be used as a key in order to pass the user name information, in case the
-     * provided API nodes might require this information.
-     */
-    public static final String KEY_USERNAME = "key_username";
-
-    /**
-     * Constant to be used as a key in order to pass the password information, in case the
-     * provided API nodes might require this information.
-     * <p>
-     * This information should be passed as an intent extra when calling the bindService
-     * or startService methods.
-     */
-    public static final String KEY_PASSWORD = "key_password";
-
-    /**
-     * Constant used as a key in order to specify which APIs the application will be requiring.
-     * <p>
-     * This information should be passed as an intent extra when calling the bindService
-     * or startService methods.
-     */
-    public static final String KEY_REQUESTED_APIS = "key_requested_apis";
-
-    /**
-     * Constant used as a key in order to let the NetworkService know whether or not it should
-     * start a recurring node latency verification task.
-     * <p>
-     * This information should be passed as an intent extra when calling the bindService
-     * or startService methods.
-     */
-    public static final String KEY_ENABLE_LATENCY_VERIFIER = "key_enable_latency_verifier";
-
-    /**
-     * Constant used as a key in order to specify the alpha (or smoothing) factor to be used in
-     * the exponential moving average calculated from the different latency samples. This only
-     * makes sense if the latency verification feature is enabled of course.
-     * <p>
-     * This information should be passed as an intent extra when calling the bindService
-     * or startService methods.
-     */
-    public static final String KEY_NODE_LATENCY_SMOOTHING_FACTOR = "key_node_latency_smoothing_factor";
-
-    /**
-     * Key used to pass via intent a boolean extra to specify whether the connection should
-     * be automatically established.
-     * <p>
-     * This information should be passed as an intent extra when calling the bindService
-     * or startService methods.
-     */
-    public static final String KEY_AUTO_CONNECT = "key_auto_connect";
-
-    /**
-     * Key used to pass via intent a list of node URLs. The value passed should be a String
-     * containing a simple comma separated list of URLs.
-     * <p>
-     * For example:
-     *
-     *      wss://domain1.com/ws,wss://domain2.com/ws,wss://domain3.com/ws
-     * <p>
-     * This information should be passed as an intent extra when calling the bindService
-     * or startService methods.
-     */
-    public static final String KEY_NODE_URLS = "key_node_urls";
-
-    private final IBinder mBinder = new LocalBinder();
 
     private WebSocket mWebSocket;
 
@@ -170,7 +94,7 @@ public class NetworkService extends Service {
     private long mCurrentId = 0;
 
     // Requested APIs passed to this service
-    private int mRequestedApis;
+    private int mRequestedApis = ApiAccess.API_DATABASE | ApiAccess.API_HISTORY | ApiAccess.API_NETWORK_BROADCAST;
 
     // Variable used to keep track of the currently obtained API accesses
     private HashMap<Integer, Integer> mApiIds = new HashMap<Integer, Integer>();
@@ -217,6 +141,31 @@ public class NetworkService extends Service {
     private DeserializationMap mDeserializationMap = new DeserializationMap();
 
     /**
+     * Singleton reference
+     */
+    private static NetworkService instance;
+
+    /**
+     * Private constructor
+     */
+    private NetworkService(){}
+
+    /**
+     * Thread-safe singleton getter.
+     * @return  A NetworkService instance.
+     */
+    public static NetworkService getInstance(){
+        if(instance == null) {
+            synchronized (NetworkService.class) {
+                if(instance == null) {
+                    instance = new NetworkService();
+                }
+            }
+        }
+        return instance;
+    }
+
+    /**
      * Actually establishes a connection from this Service to one of the full nodes.
      */
     public void connect(){
@@ -230,11 +179,11 @@ public class NetworkService extends Service {
         synchronized (mWebSocketListener){
             mSelectedNode = nodeProvider.getBestNode();
             if(mSelectedNode != null){
-                Log.d(TAG,"Trying to connect to: "+ mSelectedNode.getUrl());
+                System.out.println("Trying to connect to: "+ mSelectedNode.getUrl());
                 Request request = new Request.Builder().url(mSelectedNode.getUrl()).build();
                 mWebSocket = client.newWebSocket(request, mWebSocketListener);
             }else{
-                Log.d(TAG,"Could not find best node, reescheduling");
+                System.out.println("Could not find best node, reescheduling");
                 // If no node could be found yet, schedule a new attempt in DEFAULT_INITIAL_DELAY ms
                 mHandler.postDelayed(mConnectAttempt, DEFAULT_INITIAL_DELAY);
             }
@@ -244,7 +193,7 @@ public class NetworkService extends Service {
     public long sendMessage(String message){
         if(mWebSocket != null){
             if(mWebSocket.send(message)){
-                Log.v(TAG,"-> " + message);
+                System.out.println("-> " + message);
                 return mCurrentId;
             }
         }else{
@@ -270,7 +219,7 @@ public class NetworkService extends Service {
             ApiCall call = apiCallable.toApiCall(apiId, ++mCurrentId);
             mRequestClassMap.put(mCurrentId, apiCallable.getClass());
             if(mWebSocket != null && mWebSocket.send(call.toJsonString())){
-                Log.v(TAG,"-> "+call.toJsonString());
+                System.out.println("-> "+call.toJsonString());
                 return mCurrentId;
             }
         }
@@ -285,8 +234,10 @@ public class NetworkService extends Service {
         return mWebSocket != null && isLoggedIn;
     }
 
-    @Override
-    public void onDestroy() {
+    /**
+     * Stops the service by closing the connection and stopping the latency verifier.
+     */
+    public void stop() {
         if(mWebSocket != null)
             mWebSocket.close(NORMAL_CLOSURE_STATUS, null);
 
@@ -294,63 +245,32 @@ public class NetworkService extends Service {
             nodeLatencyVerifier.stop();
     }
 
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return mBinder;
-    }
-
     /**
-     * Initialize information and try to connect to a node accordingly. This methods were moved
-     * from onBind to avoid crashes due to components other than {@link NetworkServiceManager}
-     * binding to the service without submitting the proper information.
-     *
-     * @param extras    Bundle that contains all required information for a proper initialization
+     * Starts the connection
      */
-    public void bootstrapService(Bundle extras) {
+    public void start(String[] urls, double alpha) {
         // Retrieving credentials and requested API data from the shared preferences
-        mUsername = extras.getString(NetworkService.KEY_USERNAME, "");
-        mPassword = extras.getString(NetworkService.KEY_PASSWORD, "");
-        mRequestedApis = extras.getInt(NetworkService.KEY_REQUESTED_APIS, 0);
-        boolean mAutoConnect = extras.getBoolean(NetworkService.KEY_AUTO_CONNECT, true);
-        boolean verifyNodeLatency = extras.getBoolean(NetworkService.KEY_ENABLE_LATENCY_VERIFIER, false);
+        mUsername = "";
+        mPassword = "";
 
-        // If the user of the library desires, a custom list of node URLs can
-        // be passed using the KEY_NODE_URLS constant
-        String nodeURLStr = extras.getString(NetworkService.KEY_NODE_URLS, "");
-        if(nodeURLStr.equals("")){
-            throw new MissingResourceException("A comma-separated list of node URLs must be provided as an intent extra", String.class.getName(), NetworkService.KEY_NODE_URLS);
+        if(urls == null || urls.length == 0){
+            throw new MissingResourceException("Expecting at least a node URL to be provided", String.class.getName(), "urls");
         }
-
-        // Adding user-provided list of node URLs
-        String[] urls = nodeURLStr.split(",");
 
         // Feeding all node information to the NodeProvider instance
         for(String nodeUrl : urls){
             nodeProvider.addNode(new FullNode(nodeUrl));
         }
 
-        if (!mAutoConnect && !verifyNodeLatency) {
-            throw new IllegalArgumentException("NetworkService$bootstrapService: verifyNodeLatency cannot be false when autoConnect is false too.");
+        ArrayList<FullNode> fullNodes = new ArrayList<>();
+        for(String url : urls){
+            fullNodes.add(new FullNode(url, alpha));
         }
+        nodeLatencyVerifier = new NodeLatencyVerifier(fullNodes);
+        fullNodePublishSubject = nodeLatencyVerifier.start();
+        fullNodePublishSubject.observeOn(AndroidSchedulers.mainThread()).subscribe(nodeLatencyObserver);
 
-        if (verifyNodeLatency) {
-            double alpha = extras.getDouble(KEY_NODE_LATENCY_SMOOTHING_FACTOR, ExponentialMovingAverage.DEFAULT_ALPHA);
-            ArrayList<FullNode> fullNodes = new ArrayList<>();
-            for(String url : urls){
-                fullNodes.add(new FullNode(url, alpha));
-            }
-            nodeLatencyVerifier = new NodeLatencyVerifier(fullNodes);
-            fullNodePublishSubject = nodeLatencyVerifier.start();
-            fullNodePublishSubject.observeOn(AndroidSchedulers.mainThread()).subscribe(nodeLatencyObserver);
-        }
-
-        if (mAutoConnect)
-            connect();
-        else
-            mHandler.postDelayed(mConnectAttempt, DEFAULT_INITIAL_DELAY);
-
-        // TODO make sure (verifyNodeLatency==false && mAutoConnect==true) is a valid/useful combination, else simplify and use only one of those arguments
+        mHandler.postDelayed(mConnectAttempt, DEFAULT_INITIAL_DELAY);
     }
 
     /**
@@ -374,7 +294,7 @@ public class NetworkService extends Service {
         public void run() {
             FullNode fullNode = nodeProvider.getBestNode();
             if(fullNode != null){
-                Log.i(TAG, String.format("Connected with %d latency results", latencyUpdateCounter));
+                System.out.println( String.format("Connected with %d latency results", latencyUpdateCounter));
                 connect();
             }else{
                 mHandler.postDelayed(this, DEFAULT_INITIAL_DELAY);
@@ -398,23 +318,12 @@ public class NetworkService extends Service {
 
         @Override
         public void onError(Throwable e) {
-            Log.e(TAG,"nodeLatencyObserver.onError.Msg: "+e.getMessage());
+            System.out.println("nodeLatencyObserver.onError.Msg: "+e.getMessage());
         }
 
         @Override
         public void onComplete() { }
     };
-
-    /**
-     * Class used for the client Binder.  Because we know this service always
-     * runs in the same process as its clients, we don't need to deal with IPC.
-     */
-    public class LocalBinder extends Binder {
-        public NetworkService getService() {
-            // Return this instance of LocalService so clients can call public methods
-            return NetworkService.this;
-        }
-    }
 
     private WebSocketListener mWebSocketListener = new WebSocketListener() {
 
@@ -446,7 +355,7 @@ public class NetworkService extends Service {
         @Override
         public synchronized void onMessage(WebSocket webSocket, String text) {
             super.onMessage(webSocket, text);
-            Log.v(TAG,"<- "+text);
+            System.out.println("<- "+text);
             JsonRpcNotification notification = gson.fromJson(text, JsonRpcNotification.class);
 
             if(notification.method != null){
@@ -514,7 +423,7 @@ public class NetworkService extends Service {
                 }
                 if(response.error != null && response.error.message != null){
                     // We could not make sense of this incoming message, just log a warning
-                    Log.w(TAG,"Error.Msg: "+response.error.message);
+                    System.out.println("Error.Msg: "+response.error.message);
                 }
                 // Properly de-serialize all other fields and broadcasts to the event bus
                 handleJsonRpcResponse(response, text);
@@ -597,10 +506,10 @@ public class NetworkService extends Service {
                         Type GetAssetsResponse = new TypeToken<JsonRpcResponse<List<Asset>>>(){}.getType();
                         parsedResponse = gson.fromJson(text, GetAssetsResponse);
                     }else {
-                        Log.w(TAG,"Unknown request class");
+                        System.out.println("Unknown request class");
                     }
                 }else{
-                    Log.w(TAG,"Unhandled situation");
+                    System.out.println("Unhandled situation");
                 }
             }
 
@@ -680,15 +589,15 @@ public class NetworkService extends Service {
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             super.onFailure(webSocket, t, response);
-            Log.e(TAG,"onFailure. Exception: "+t.getClass().getName()+", Msg: "+t.getMessage());
+            System.out.println("onFailure. Exception: "+t.getClass().getName()+", Msg: "+t.getMessage());
             // Logging error stack trace
             for(StackTraceElement element : t.getStackTrace()){
-                Log.v(TAG,String.format("%s#%s:%s", element.getClassName(), element.getMethodName(), element.getLineNumber()));
+                System.out.println(String.format("%s#%s:%s", element.getClassName(), element.getMethodName(), element.getLineNumber()));
             }
 
             // If there is a response, we print it
             if(response != null){
-                Log.e(TAG,"Response: "+response.message());
+                System.out.println("Response: "+response.message());
             }
 
             handleWebSocketDisconnection(true, true);
@@ -702,7 +611,7 @@ public class NetworkService extends Service {
          * @param penalizeNode          Whether or not to penalize the current node with a very high latency reading.
          */
         private synchronized void handleWebSocketDisconnection(boolean tryReconnection, boolean penalizeNode) {
-            Log.d(TAG,"handleWebSocketDisconnection. try reconnection: " + tryReconnection + ", penalizeNode: " + penalizeNode);
+            System.out.println("handleWebSocketDisconnection. try reconnection: " + tryReconnection + ", penalizeNode: " + penalizeNode);
             RxBus.getBusInstance().send(new ConnectionStatusUpdate(ConnectionStatusUpdate.DISCONNECTED, ApiAccess.API_NONE));
             isLoggedIn = false;
 
@@ -733,8 +642,7 @@ public class NetworkService extends Service {
                 RxBus.getBusInstance().send(new ConnectionStatusUpdate(ConnectionStatusUpdate.DISCONNECTED, ApiAccess.API_NONE));
 
                 if (nodeProvider.getBestNode() == null) {
-                    Log.e(TAG, "Giving up on connections");
-                    stopSelf();
+                    System.out.println( "Giving up on connections");
                 } else {
                     mHandler.postDelayed(new Runnable() {
                         @Override
