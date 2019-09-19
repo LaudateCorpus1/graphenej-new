@@ -1,8 +1,5 @@
 package cy.agorise.graphenej.api.android;
 
-import android.os.Handler;
-import android.os.Looper;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -12,6 +9,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.concurrent.TimeUnit;
 
@@ -56,9 +54,12 @@ import cy.agorise.graphenej.network.NodeProvider;
 import cy.agorise.graphenej.operations.CustomOperation;
 import cy.agorise.graphenej.operations.LimitOrderCreateOperation;
 import cy.agorise.graphenej.operations.TransferOperation;
+import io.reactivex.Observable;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.subjects.PublishSubject;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -114,7 +115,7 @@ public class NetworkService {
     // Property used to keep track of the currently active node
     private FullNode mSelectedNode;
 
-    private Handler mHandler = new Handler(Looper.getMainLooper());
+    private CompositeDisposable mCompositeDisposable;
 
     private Gson gson = new GsonBuilder()
             .registerTypeAdapter(Transaction.class, new Transaction.TransactionDeserializer())
@@ -185,7 +186,8 @@ public class NetworkService {
             }else{
                 System.out.println("Could not find best node, reescheduling");
                 // If no node could be found yet, schedule a new attempt in DEFAULT_INITIAL_DELAY ms
-                mHandler.postDelayed(mConnectAttempt, DEFAULT_INITIAL_DELAY);
+                Disposable d = Observable.timer(DEFAULT_INITIAL_DELAY, TimeUnit.MILLISECONDS).subscribe(mConnectAttempt);
+                mCompositeDisposable.add(d);
             }
         }
     }
@@ -243,12 +245,16 @@ public class NetworkService {
 
         if(nodeLatencyVerifier != null)
             nodeLatencyVerifier.stop();
+
+        mCompositeDisposable.dispose();
     }
 
     /**
      * Starts the connection
      */
     public void start(String[] urls, double alpha) {
+        mCompositeDisposable = new CompositeDisposable();
+
         // Retrieving credentials and requested API data from the shared preferences
         mUsername = "";
         mPassword = "";
@@ -270,7 +276,8 @@ public class NetworkService {
         fullNodePublishSubject = nodeLatencyVerifier.start();
         fullNodePublishSubject.observeOn(AndroidSchedulers.mainThread()).subscribe(nodeLatencyObserver);
 
-        mHandler.postDelayed(mConnectAttempt, DEFAULT_INITIAL_DELAY);
+        Disposable d = Observable.timer(DEFAULT_INITIAL_DELAY, TimeUnit.MILLISECONDS).subscribe(mConnectAttempt);
+        mCompositeDisposable.add(d);
     }
 
     /**
@@ -281,7 +288,7 @@ public class NetworkService {
     }
 
     /**
-     * Runnable that will perform a connection attempt with the best node after DEFAULT_INITIAL_DELAY
+     * Consumer that will perform a connection attempt with the best node after DEFAULT_INITIAL_DELAY
      * milliseconds. This is used only if the node latency verification is activated.
      *
      * The reason to delay the initial connection is that we want to ideally connect to the best node,
@@ -289,15 +296,17 @@ public class NetworkService {
      * first node latency measurement round to finish in order to have at least a partial result set
      * that could be used.
      */
-    private Runnable mConnectAttempt = new Runnable() {
+    private Consumer mConnectAttempt = new Consumer() {
+
         @Override
-        public void run() {
+        public void accept(Object o) throws Exception {
             FullNode fullNode = nodeProvider.getBestNode();
             if(fullNode != null){
-                System.out.println( String.format("Connected with %d latency results", latencyUpdateCounter));
+                System.out.println(String.format(Locale.ROOT, "Connected with %d latency results", latencyUpdateCounter));
                 connect();
             }else{
-                mHandler.postDelayed(this, DEFAULT_INITIAL_DELAY);
+                Disposable d = Observable.timer(DEFAULT_INITIAL_DELAY, TimeUnit.MILLISECONDS).subscribe(this);
+                mCompositeDisposable.add(d);
             }
         }
     };
@@ -644,12 +653,13 @@ public class NetworkService {
                 if (nodeProvider.getBestNode() == null) {
                     System.out.println( "Giving up on connections");
                 } else {
-                    mHandler.postDelayed(new Runnable() {
+                    Disposable d = Observable.timer(DEFAULT_RETRY_DELAY, TimeUnit.MILLISECONDS).subscribe(new Consumer<Long>() {
                         @Override
-                        public void run() {
+                        public void accept(Long aLong) throws Exception {
                             connect();
                         }
-                    }, DEFAULT_RETRY_DELAY);
+                    });
+                    mCompositeDisposable.add(d);
                 }
             }
 
