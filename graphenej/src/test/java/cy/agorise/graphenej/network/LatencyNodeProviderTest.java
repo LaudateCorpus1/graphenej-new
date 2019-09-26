@@ -1,10 +1,10 @@
 package cy.agorise.graphenej.network;
 
-import junit.framework.Assert;
-
 import org.junit.Test;
 
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 public class LatencyNodeProviderTest {
     private FullNode nodeA, nodeB, nodeC;
@@ -34,9 +34,9 @@ public class LatencyNodeProviderTest {
 
         // Confirming that the getSortedNodes gives us a sorted list of nodes in increasing latency order
         List<FullNode> fullNodeList = latencyNodeProvider.getSortedNodes();
-        Assert.assertSame(nodeC, fullNodeList.get(0));
-        Assert.assertSame(nodeB, fullNodeList.get(1));
-        Assert.assertSame(nodeA, fullNodeList.get(2));
+        assertEquals(nodeC, fullNodeList.get(0));
+        assertEquals(nodeB, fullNodeList.get(1));
+        assertEquals(nodeA, fullNodeList.get(2));
 
         // Adding more nodes with different latencies measurements
         FullNode nodeD = new FullNode("wss://nodeD");
@@ -55,11 +55,11 @@ public class LatencyNodeProviderTest {
 
         FullNode bestNode = latencyNodeProvider.getBestNode();
         // Checking for best node
-        Assert.assertSame("Verifying that the nodeE is the best now", nodeE, bestNode);
+        assertEquals("Verifying that the nodeE is the best now", nodeE, bestNode);
         fullNodeList = latencyNodeProvider.getSortedNodes();
         FullNode worstNode = fullNodeList.get(fullNodeList.size() - 1);
         // Checking for worst node
-        Assert.assertSame("Verifying that the nodeF is the worst now", nodeF, worstNode);
+        assertEquals("Verifying that the nodeF is the worst now", nodeF, worstNode);
     }
 
     @Test
@@ -68,7 +68,7 @@ public class LatencyNodeProviderTest {
 
         // Confirming that the best node is nodeC
         FullNode bestNode = latencyNodeProvider.getBestNode();
-        Assert.assertSame("Check that the best node is nodeC", nodeC, bestNode);
+        assertEquals("Check that the best node is nodeC", nodeC, bestNode);
 
         // Improving nodeA score by feeding it with new better latency measurements
         latencyNodeProvider.updateNode(nodeA, 10);
@@ -80,7 +80,7 @@ public class LatencyNodeProviderTest {
         latencyNodeProvider.updateNode(nodeA);
         bestNode = latencyNodeProvider.getBestNode();
         System.out.println("Best node latency after update: "+bestNode.getLatencyValue());
-        Assert.assertSame("Check that the best node now is the nodeA", nodeA, bestNode);
+        assertEquals("Check that the best node now is the nodeA", nodeA, bestNode);
     }
 
     @Test
@@ -89,7 +89,7 @@ public class LatencyNodeProviderTest {
         nodeA.addLatencyValue(Long.MAX_VALUE);
         latencyNodeProvider.updateNode(nodeA);
         FullNode best = latencyNodeProvider.getBestNode();
-        Assert.assertSame(nodeC, best);
+        assertEquals(nodeC, best);
     }
 
     @Test
@@ -174,6 +174,6 @@ public class LatencyNodeProviderTest {
         provider.updateNode(node20);
 
         FullNode best = provider.getBestNode();
-        Assert.assertSame("Expects node4 to be the best", node4, best);
+        assertEquals("Expects node4 to be the best", node4, best);
     }
 }

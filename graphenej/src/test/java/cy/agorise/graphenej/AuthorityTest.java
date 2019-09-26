@@ -7,6 +7,7 @@ import org.junit.Test;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * Created by nelson on 12/16/16.
@@ -48,7 +49,7 @@ public class AuthorityTest {
     @Test
     public void equals() throws Exception {
         assertEquals("Equal authorities", authority, sameAuthority);
-        assertEquals("Different authorities ", authority, differentAuthority);
+        assertNotEquals("Different authorities ", authority, differentAuthority);
         assertEquals("Two public keys with the same public key should be equal", keyAuthority1, keyAuthority2);
     }
 
