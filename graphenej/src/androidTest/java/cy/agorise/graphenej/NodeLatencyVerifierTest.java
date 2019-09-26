@@ -9,7 +9,6 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 
-import cy.agorise.graphenej.api.bitshares.Nodes;
 import cy.agorise.graphenej.network.FullNode;
 import cy.agorise.graphenej.network.LatencyNodeProvider;
 import cy.agorise.graphenej.network.NodeLatencyVerifier;
@@ -22,12 +21,20 @@ import io.reactivex.subjects.PublishSubject;
 public class NodeLatencyVerifierTest {
     private final String TAG = this.getClass().getName();
 
+    String[] nodeURLs = new String[]{
+            "wss://bitshares.openledger.info/ws",
+            "wss://us.nodes.bitshares.ws",
+            "wss://eu.nodes.bitshares.ws",
+            "wss://citadel.li/node",
+            "wss://api.bts.mobi/ws"
+    };
+
     @Test
     public void testNodeLatencyTest() throws Exception {
         ArrayList<FullNode> nodeList = new ArrayList<>();
-        nodeList.add(new FullNode(Nodes.NODE_URLS[0]));
-        nodeList.add(new FullNode(Nodes.NODE_URLS[1]));
-        nodeList.add(new FullNode(Nodes.NODE_URLS[2]));
+        nodeList.add(new FullNode(nodeURLs[0]));
+        nodeList.add(new FullNode(nodeURLs[1]));
+        nodeList.add(new FullNode(nodeURLs[2]));
         final NodeLatencyVerifier nodeLatencyVerifier = new NodeLatencyVerifier(nodeList);
         PublishSubject subject = nodeLatencyVerifier.start();
         final NodeProvider nodeProvider = new LatencyNodeProvider();
