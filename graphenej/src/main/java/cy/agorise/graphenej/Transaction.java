@@ -20,6 +20,7 @@ import java.lang.reflect.Type;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -97,14 +98,23 @@ public class Transaction implements ByteSerializable, JsonSerializable {
     public Transaction(BlockData blockData, List<BaseOperation> operationList){
         this.blockData = blockData;
         this.operations = operationList;
+        this.extensions = new Extensions();
     }
 
     /**
-     * Updates the block data
+     * Block data getter
      * @param blockData New block data
      */
     public void setBlockData(BlockData blockData){
         this.blockData = blockData;
+    }
+
+    /**
+     * Block data setter
+     * @return BlockData instance
+     */
+    public BlockData getBlockData(){
+        return this.blockData;
     }
 
     /**
@@ -229,7 +239,12 @@ public class Transaction implements ByteSerializable, JsonSerializable {
 
         // Getting the signature before anything else,
         // since this might change the transaction expiration data slightly
-        byte[] signature = getGrapheneSignature();
+        byte[] signature = null;
+        try{
+            signature = getGrapheneSignature();
+        }catch(Exception e){
+            System.out.println("Could not generate signature");
+        }
 
         // Formatting expiration time
         Date expirationTime = new Date(blockData.getExpiration() * 1000);
@@ -239,10 +254,12 @@ public class Transaction implements ByteSerializable, JsonSerializable {
         // Adding expiration
         obj.addProperty(KEY_EXPIRATION, dateFormat.format(expirationTime));
 
-        // Adding signatures
-        JsonArray signatureArray = new JsonArray();
-        signatureArray.add(Util.bytesToHex(signature));
-        obj.add(KEY_SIGNATURES, signatureArray);
+        if(signature != null){
+            // Adding signature
+            JsonArray signatureArray = new JsonArray();
+            signatureArray.add(Util.bytesToHex(signature));
+            obj.add(KEY_SIGNATURES, signatureArray);
+        }
 
         JsonArray operationsArray = new JsonArray();
         for(BaseOperation operation : operations){
@@ -259,7 +276,19 @@ public class Transaction implements ByteSerializable, JsonSerializable {
         obj.addProperty(KEY_REF_BLOCK_PREFIX, blockData.getRefBlockPrefix());
 
         return obj;
+    }
 
+    /**
+     * Method that will return a hash of this transaction's data. The hash covers only the transaction
+     * attributes and not the signature or the chain id.
+     *
+     * @return  A hash of the serialized transaction.
+     */
+    public byte[] getHash(){
+        byte[] txBytes = toBytes();
+        byte[] toHash = Arrays.copyOfRange(txBytes, 32, txBytes.length); //Tx data only, without chain id
+        Sha256Hash hash = Sha256Hash.wrap(Sha256Hash.hash(toHash));
+        return Arrays.copyOfRange(hash.getBytes(), 0, 20); // The hash is only the first 20 bytes
     }
 
     /**
@@ -291,7 +320,8 @@ public class Transaction implements ByteSerializable, JsonSerializable {
             SimpleDateFormat dateFormat = new SimpleDateFormat(Util.TIME_DATE_FORMAT);
             dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
             Date expirationDate = dateFormat.parse(expiration, new ParsePosition(0));
-            BlockData blockData = new BlockData(refBlockNum, refBlockPrefix, expirationDate.getTime());
+            long relativeExpiration = expirationDate.getTime() / 1000;
+            BlockData blockData = new BlockData(refBlockNum, refBlockPrefix, relativeExpiration);
 
             // Parsing operation list
             BaseOperation operation = null;
@@ -387,6 +417,26 @@ public class Transaction implements ByteSerializable, JsonSerializable {
                         //TODO: Add operation deserialization support
                     } else if (operationId == OperationType.ASSET_CLAIM_FEES_OPERATION.ordinal()) {
                         //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.FBA_DISTRIBUTE_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.BID_COLLATERAL_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.EXECUTE_BID_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.ASSET_CLAIM_POOL_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.ASSET_UPDATE_ISSUER_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.HTLC_CREATE_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.HTLC_REDEEM_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.HTLC_REDEEMED_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.HTLC_EXTEND_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
+                    } else if (operationId == OperationType.HTLC_REFUND_OPERATION.ordinal()) {
+                        //TODO: Add operation deserialization support
                     }
                     if (operation != null) operationList.add(operation);
                     operation = null;
@@ -400,5 +450,10 @@ public class Transaction implements ByteSerializable, JsonSerializable {
             }
             return new Transaction(blockData, operationList);
         }
+    }
+
+    @Override
+    public String toString() {
+        return this.toJsonString();
     }
 }

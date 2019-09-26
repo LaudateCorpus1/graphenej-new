@@ -1,5 +1,6 @@
 package cy.agorise.graphenej;
 
+import com.google.common.base.Objects;
 import com.google.common.primitives.Bytes;
 import cy.agorise.graphenej.errors.MalformedAddressException;
 import org.bitcoinj.core.Base58;
@@ -60,5 +61,19 @@ public class Address {
         ripemd160Digest.update(data, 0, data.length);
         ripemd160Digest.doFinal(checksum, 0);
         return Arrays.copyOfRange(checksum, 0, 4);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Address address = (Address) o;
+        return Objects.equal(publicKey, address.publicKey) &&
+                Objects.equal(prefix, address.prefix);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(publicKey, prefix);
     }
 }
