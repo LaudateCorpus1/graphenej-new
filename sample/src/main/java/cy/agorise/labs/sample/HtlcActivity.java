@@ -1,8 +1,6 @@
 package cy.agorise.labs.sample;
 
-import android.content.ComponentName;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.widget.Toolbar;
@@ -239,10 +237,4 @@ public class HtlcActivity extends ConnectedActivity implements
         // Return a newly built transaction
         return new Transaction(privKey, blockData, operations);
     }
-
-    @Override
-    public void onServiceConnected(ComponentName componentName, IBinder iBinder) { }
-
-    @Override
-    public void onServiceDisconnected(ComponentName componentName) { }
 }

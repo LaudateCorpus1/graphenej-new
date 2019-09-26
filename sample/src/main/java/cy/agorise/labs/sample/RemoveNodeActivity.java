@@ -1,17 +1,12 @@
 package cy.agorise.labs.sample;
 
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.util.SortedList;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -40,7 +35,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.subjects.PublishSubject;
 
-public class RemoveNodeActivity extends AppCompatActivity implements ServiceConnection {
+public class RemoveNodeActivity extends ConnectedActivity {
 
     private final String TAG = this.getClass().getName();
 
@@ -66,18 +61,6 @@ public class RemoveNodeActivity extends AppCompatActivity implements ServiceConn
         rvNodes.setLayoutManager(new LinearLayoutManager(this));
         nodesAdapter = new FullNodesAdapter(this, LATENCY_COMPARATOR);
         rvNodes.setAdapter(nodesAdapter);
-    }
-
-    @OnClick(R.id.btnReconnectNode)
-    public void removeCurrentNode() {
-        mNetworkService.reconnectNode();
-    }
-
-    @Override
-    public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-        // We've bound to LocalService, cast the IBinder and get LocalService instance
-        NetworkService.LocalBinder binder = (NetworkService.LocalBinder) iBinder;
-        mNetworkService = binder.getService();
 
         if(mNetworkService != null){
             // PublishSubject used to announce full node latencies updates
@@ -90,9 +73,9 @@ public class RemoveNodeActivity extends AppCompatActivity implements ServiceConn
         }
     }
 
-    @Override
-    public void onServiceDisconnected(ComponentName componentName) {
-        mNetworkService = null;
+    @OnClick(R.id.btnReconnectNode)
+    public void removeCurrentNode() {
+        mNetworkService.reconnectNode();
     }
 
     /**
@@ -118,20 +101,6 @@ public class RemoveNodeActivity extends AppCompatActivity implements ServiceConn
         @Override
         public void onComplete() { }
     };
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // Bind to LocalService
-        Intent intent = new Intent(this, NetworkService.class);
-        bindService(intent, this, Context.BIND_AUTO_CREATE);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        unbindService(this);
-    }
 
     class FullNodesAdapter extends RecyclerView.Adapter<FullNodesAdapter.ViewHolder> {
 
