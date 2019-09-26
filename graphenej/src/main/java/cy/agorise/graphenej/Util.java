@@ -5,6 +5,10 @@ import com.google.common.primitives.UnsignedLong;
 
 import org.spongycastle.crypto.DataLengthException;
 import org.spongycastle.crypto.InvalidCipherTextException;
+import org.spongycastle.crypto.digests.GeneralDigest;
+import org.spongycastle.crypto.digests.RIPEMD160Digest;
+import org.spongycastle.crypto.digests.SHA1Digest;
+import org.spongycastle.crypto.digests.SHA256Digest;
 import org.spongycastle.crypto.engines.AESFastEngine;
 import org.spongycastle.crypto.modes.CBCBlockCipher;
 import org.spongycastle.crypto.paddings.PaddedBufferedBlockCipher;
@@ -320,7 +324,9 @@ public class Util {
             }
             
             byte[] temp = new byte[count];
-            System.arraycopy(out, out.length - count, temp, 0, temp.length);
+            int srcPos = out.length - count > 0 ? out.length - count : 0;
+            int length = count < out.length ? count : out.length;
+            System.arraycopy(out, srcPos, temp, 0, length);
             byte[] temp2 = new byte[count];
             Arrays.fill(temp2, (byte) count);
             if (Arrays.equals(temp, temp2)) {
@@ -382,5 +388,37 @@ public class Util {
      */
     public static long toBase(double value, int precision){
         return (long) (value * Math.pow(10, precision));
+    }
+
+    /**
+     * Creates a hash for HTLC operations.
+     *
+     * @param preimage The data we want to operate on.
+     * @param hashType The type of hash.
+     * @return The hash.
+     * @throws NoSuchAlgorithmException
+     */
+    public static byte[] htlcHash(byte[] preimage, HtlcHashType hashType) throws NoSuchAlgorithmException {
+        byte[] out = null;
+        GeneralDigest digest = null;
+        switch(hashType){
+            case RIPEMD160:
+                digest = new RIPEMD160Digest();
+                out = new byte[20];
+                break;
+            case SHA1:
+                digest = new SHA1Digest();
+                out = new byte[20];
+                break;
+            case SHA256:
+                digest = new SHA256Digest();
+                out = new byte[32];
+                break;
+            default:
+                throw new IllegalArgumentException("Not supported hash function!");
+        }
+        digest.update(preimage, 0, preimage.length);
+        digest.doFinal(out, 0);
+        return out;
     }
 }

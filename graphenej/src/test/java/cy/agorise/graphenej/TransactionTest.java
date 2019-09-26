@@ -13,6 +13,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,7 +25,6 @@ import cy.agorise.graphenej.api.TransactionBroadcastSequence;
 import cy.agorise.graphenej.interfaces.WitnessResponseListener;
 import cy.agorise.graphenej.models.BaseResponse;
 import cy.agorise.graphenej.models.WitnessResponse;
-import cy.agorise.graphenej.objects.Memo;
 import cy.agorise.graphenej.operations.CustomOperation;
 import cy.agorise.graphenej.operations.LimitOrderCancelOperation;
 import cy.agorise.graphenej.operations.LimitOrderCreateOperation;
@@ -153,7 +153,8 @@ public class TransactionTest {
         PublicKey to2 = new PublicKey(ECKey.fromPublicOnly(new BrainKey(BILTHON_16_BRAIN_KEY, 0).getPublicKey()));
 
         // Creating memo
-        BigInteger nonce = BigInteger.ONE;
+        SecureRandom random = new SecureRandom();
+        BigInteger nonce = BigInteger.valueOf(random.nextLong());
         byte[] encryptedMessage = Memo.encryptMessage(sourcePrivateKey, to1, nonce, "another message");
         Memo memo = new Memo(new Address(ECKey.fromPublicOnly(sourcePrivateKey.getPubKey())), new Address(to1.getKey()), nonce, encryptedMessage);
 
@@ -345,5 +346,22 @@ public class TransactionTest {
 
         // Broadcasting transaction
         broadcastTransaction(sourcePrivateKey, operationList, listener, null);
+    }
+
+    @Test
+    public void testTransactionHash(){
+        ArrayList<BaseOperation> operations = new ArrayList<>();
+        TransferOperation transferOperation = new TransferOperationBuilder()
+                .setTransferAmount(new AssetAmount(UnsignedLong.valueOf("363"), new Asset("1.3.0")))
+                .setFee(new AssetAmount(UnsignedLong.valueOf("10420"), new Asset("1.3.0")))
+                .setSource(new UserAccount("1.2.1029856"))
+                .setDestination(new UserAccount("1.2.390320"))
+                .build();
+        BlockData blockData = new BlockData(50885, 2948192884L, 1543548351);
+        operations.add(transferOperation);
+        Transaction transaction = new Transaction(blockData, operations);
+        byte[] testHash = transaction.getHash();
+        // Making sure the generated hash matches the one we expect from the block explorer
+        Assert.assertArrayEquals(Util.hexToBytes("4fec588ccdd04daaf80666a3646a48b5189df041"), testHash);
     }
 }

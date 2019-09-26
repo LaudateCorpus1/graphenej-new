@@ -1,34 +1,54 @@
-group 'cy.agorise'
-version '0.4.6'
-
+apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'com.android.library'
-apply from: 'maven-push.gradle'
 
-
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile 'com.neovisionaries:nv-websocket-client:1.30'
-    compile 'org.bitcoinj:bitcoinj-core:0.14.3'
-    compile group: 'com.google.code.gson', name: 'gson', version: '2.8.0'
-    compile group: "org.tukaani", name: "xz", version: "1.6"
+publish {
+    userOrg = 'bilthon'
+    groupId = 'cy.agorise.graphenej'
+    artifactId = 'graphenej'
+    publishVersion = '0.6.0'
+    repoName = 'Graphenej'
+    desc = 'A Java library for mobile app Developers; Graphene/Bitshares blockchain.'
+    website = 'https://github.com/Agorise/graphenej'
 }
 
-
 android {
-    compileSdkVersion 24
-    buildToolsVersion "25.0.0"
+    compileSdkVersion 28
 
     defaultConfig {
-        minSdkVersion 9
-        targetSdkVersion 24
-        versionCode 9
-        versionName "0.4.6"
+        minSdkVersion 14
+        targetSdkVersion 28
+        versionCode 12
+        versionName "0.6.0"
         vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
+        debug{}
+        preRelease{}
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
+    defaultConfig {
+        multiDexEnabled true
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+}
+
+dependencies {
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
+    implementation 'com.neovisionaries:nv-websocket-client:1.30'
+    implementation 'org.bitcoinj:bitcoinj-core:0.14.3'
+    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'org.tukaani:xz:1.6'
+
+    androidTestImplementation 'com.android.support:support-annotations:28.0.0'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test:rules:1.0.2'
+
+    //  Rx dependencies
+    api 'io.reactivex.rxjava2:rxandroid:2.1.0'
+    api 'io.reactivex.rxjava2:rxjava:2.2.2'
+    api 'com.jakewharton.rxrelay2:rxrelay:2.1.0'
+    api 'com.squareup.okhttp3:okhttp:3.12.2'
 }
