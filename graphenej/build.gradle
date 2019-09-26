@@ -1,48 +1,15 @@
-buildscript {
-    repositories {
-        jcenter()
-    }
-    dependencies {
-        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.0'
-    }
-}
-
+apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'com.jfrog.bintray'
 
-ext {
-    bintrayRepo = 'maven'
-    bintrayName = 'cy.agorise.graphenej'
-
-    publishedGroupId = 'cy.agorise'
-    artifact = 'graphenej'
-    libraryVersion = '0.6.0'
-
-    libraryName = 'Graphenej'
-    libraryDescription = 'A Java library for mobile app Developers; Graphene/Bitshares blockchain.'
-
-    siteUrl = 'https://github.com/Agorise/graphenej'
-    gitUrl = 'https://github.com/Agorise/graphenej'
-
-
-    developerId = 'bilthon'
-    developerName = 'Nelson Pérez'
-    developerEmail = 'bilthon@gmail.com'
-
-    licenseName = 'MIT License'
-    licenseUrl = 'https://github.com/Agorise/graphenej/blob/master/LICENSE'
-    allLicenses = ["MIT"]
-
-    //Bintray Credentials
-    Properties properties = new Properties()
-    properties.load(project.rootProject.file('local.properties').newDataInputStream())
-
-    bintrayUsername = properties.getProperty('bintay.user')
-    bintrayApiKey = properties.getProperty('bintray.apikey')
+publish {
+    userOrg = 'bilthon'
+    groupId = 'cy.agorise.graphenej'
+    artifactId = 'graphenej'
+    publishVersion = '0.6.0'
+    repoName = 'Graphenej'
+    desc = 'A Java library for mobile app Developers; Graphene/Bitshares blockchain.'
+    website = 'https://github.com/Agorise/graphenej'
 }
-
 
 android {
     compileSdkVersion 28
@@ -51,7 +18,7 @@ android {
         minSdkVersion 14
         targetSdkVersion 28
         versionCode 12
-        versionName "0.4.7-alpha3"
+        versionName "0.6.0"
         vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
