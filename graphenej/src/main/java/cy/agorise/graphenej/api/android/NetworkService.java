@@ -303,6 +303,7 @@ public class NetworkService {
             FullNode fullNode = nodeProvider.getBestNode();
             if(fullNode != null){
                 System.out.println(String.format(Locale.ROOT, "Connected with %d latency results", latencyUpdateCounter));
+                mApiIds.clear();
                 connect();
             }else{
                 Disposable d = Observable.timer(DEFAULT_INITIAL_DELAY, TimeUnit.MILLISECONDS).subscribe(this);
