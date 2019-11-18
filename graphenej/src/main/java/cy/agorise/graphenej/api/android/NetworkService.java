@@ -1,5 +1,7 @@
 package cy.agorise.graphenej.api.android;
 
+import android.util.SparseArray;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -22,6 +24,7 @@ import cy.agorise.graphenej.RPC;
 import cy.agorise.graphenej.Transaction;
 import cy.agorise.graphenej.UserAccount;
 import cy.agorise.graphenej.api.ApiAccess;
+import cy.agorise.graphenej.api.ApiCallback;
 import cy.agorise.graphenej.api.ConnectionStatusUpdate;
 import cy.agorise.graphenej.api.calls.ApiCallable;
 import cy.agorise.graphenej.api.calls.GetAccountBalances;
@@ -116,6 +119,8 @@ public class NetworkService {
     private FullNode mSelectedNode;
 
     private CompositeDisposable mCompositeDisposable;
+
+    private SparseArray<ApiCallback> mCallbackMap = new SparseArray<ApiCallback>();
 
     private Gson gson = new GsonBuilder()
             .registerTypeAdapter(Transaction.class, new Transaction.TransactionDeserializer())
@@ -228,6 +233,18 @@ public class NetworkService {
         return -1;
     }
 
+    public synchronized long sendMessage(ApiCallable apiCallable, int requiredApi, ApiCallback callback){
+        long id = this.sendMessage(apiCallable, requiredApi);
+        if(callback != null){
+            if(id != -1){
+                mCallbackMap.put((int) id, callback);
+            }else{
+                callback.onFailure(new Exception("Message could not be sent"), null);
+            }
+        }
+        return id;
+    }
+
     /**
      * Method used to inform any external party a clue about the current connectivity status
      * @return  True if the service is currently connected and logged in, false otherwise.
@@ -247,6 +264,7 @@ public class NetworkService {
             nodeLatencyVerifier.stop();
 
         mCompositeDisposable.dispose();
+        mCallbackMap.clear();
     }
 
     /**
@@ -334,6 +352,20 @@ public class NetworkService {
         @Override
         public void onComplete() { }
     };
+
+    /**
+     * Method used to execute every callback failure method and remove them from the SparseArray.
+     *
+     * @param throwable
+     * @param response
+     */
+    private void resetCallbacks(Throwable throwable, Response response){
+        for(int i = 0; i < mCallbackMap.size(); i++){
+            ApiCallback callback = mCallbackMap.get(i);
+            callback.onFailure(throwable, response);
+            mCallbackMap.remove(i);
+        }
+    }
 
     private WebSocketListener mWebSocketListener = new WebSocketListener() {
 
@@ -449,6 +481,14 @@ public class NetworkService {
          */
         private void handleJsonRpcResponse(JsonRpcResponse response, String text){
             JsonRpcResponse parsedResponse = null;
+
+            // Executing callback, if present
+            if(mCallbackMap.indexOfKey((int) response.id) > 0){
+                ApiCallback callback = (ApiCallback) mCallbackMap.get((int)response.id);
+                callback.onResponse(response, text);
+                mCallbackMap.remove((int)response.id);
+            }
+
             Class requestClass = mRequestClassMap.get(response.id);
             if(requestClass != null){
                 // Removing the class entry in the map
@@ -590,6 +630,7 @@ public class NetworkService {
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
             super.onClosed(webSocket, code, reason);
+            resetCallbacks(new Exception("Websocket closed. Reason: " + reason), null);
             if(code == GOING_AWAY_STATUS)
                 handleWebSocketDisconnection(true, false);
             else
@@ -599,6 +640,7 @@ public class NetworkService {
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             super.onFailure(webSocket, t, response);
+            resetCallbacks(t, response);
             System.out.println("onFailure. Exception: "+t.getClass().getName()+", Msg: "+t.getMessage());
             // Logging error stack trace
             for(StackTraceElement element : t.getStackTrace()){
