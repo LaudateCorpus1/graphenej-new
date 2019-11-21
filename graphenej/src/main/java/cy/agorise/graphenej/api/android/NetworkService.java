@@ -120,7 +120,7 @@ public class NetworkService {
 
     private CompositeDisposable mCompositeDisposable;
 
-    private SparseArray<ApiCallback> mCallbackMap = new SparseArray<ApiCallback>();
+    private HashMap<Long, ApiCallback> mCallbackMap = new HashMap<Long, ApiCallback>();
 
     private Gson gson = new GsonBuilder()
             .registerTypeAdapter(Transaction.class, new Transaction.TransactionDeserializer())
@@ -237,7 +237,7 @@ public class NetworkService {
         long id = this.sendMessage(apiCallable, requiredApi);
         if(callback != null){
             if(id != -1){
-                mCallbackMap.put((int) id, callback);
+                mCallbackMap.put(id, callback);
             }else{
                 callback.onFailure(new Exception("Message could not be sent"), null);
             }
@@ -360,10 +360,11 @@ public class NetworkService {
      * @param response
      */
     private void resetCallbacks(Throwable throwable, Response response){
-        for(int i = 0; i < mCallbackMap.size(); i++){
-            ApiCallback callback = mCallbackMap.get(i);
-            callback.onFailure(throwable, response);
-            mCallbackMap.remove(i);
+        for(ApiCallback callback : mCallbackMap.values()) {
+            if(callback != null) {
+                callback.onFailure(throwable, response);
+                mCallbackMap.remove(callback);
+            }
         }
     }
 
@@ -482,13 +483,6 @@ public class NetworkService {
         private void handleJsonRpcResponse(JsonRpcResponse response, String text){
             JsonRpcResponse parsedResponse = null;
 
-            // Executing callback, if present
-            if(mCallbackMap.indexOfKey((int) response.id) > 0){
-                ApiCallback callback = (ApiCallback) mCallbackMap.get((int)response.id);
-                callback.onResponse(response, text);
-                mCallbackMap.remove((int)response.id);
-            }
-
             Class requestClass = mRequestClassMap.get(response.id);
             if(requestClass != null){
                 // Removing the class entry in the map
@@ -567,6 +561,14 @@ public class NetworkService {
             if(parsedResponse == null){
                 parsedResponse = response;
             }
+
+            // Executing callback, if present with the parsed response
+            if(mCallbackMap.containsKey(response.id)){
+                ApiCallback callback = mCallbackMap.get(response.id);
+                callback.onResponse(parsedResponse, text);
+                mCallbackMap.remove(response.id);
+            }
+
             // Broadcasting the parsed response to all interested listeners
             RxBus.getBusInstance().send(parsedResponse);
         }
