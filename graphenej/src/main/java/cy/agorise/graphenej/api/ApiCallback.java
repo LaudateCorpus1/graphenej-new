@@ -14,7 +14,7 @@ public interface ApiCallback {
      * @param response  Parsed response
      * @param text      Raw text response
      */
-    void onResponse(JsonRpcResponse response, String text);
+    <T> void onResponse(JsonRpcResponse<T> response, String text);
 
     /**
      * Method called whenever there was an error and the response could not be delivered.
