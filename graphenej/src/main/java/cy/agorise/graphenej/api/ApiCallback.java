@@ -1,5 +1,7 @@
 package cy.agorise.graphenej.api;
 
+import javax.annotation.Nullable;
+
 import cy.agorise.graphenej.models.JsonRpcResponse;
 import okhttp3.Response;
 
@@ -19,8 +21,8 @@ public interface ApiCallback {
     /**
      * Method called whenever there was an error and the response could not be delivered.
      *
-     * @param t         Error Trowable, potentially with some details about the problem.
+     * @param t         Error Throwable, potentially with some details about the problem.
      * @param response  Node response, if any
      */
-    void onFailure(Throwable t, Response response);
+    void onFailure(Throwable t, @Nullable Response response);
 }

@@ -565,7 +565,10 @@ public class NetworkService {
             // Executing callback, if present with the parsed response
             if(mCallbackMap.containsKey(response.id)){
                 ApiCallback callback = mCallbackMap.get(response.id);
-                callback.onResponse(parsedResponse, text);
+                if(response.error == null)
+                    callback.onResponse(parsedResponse, text);
+                else
+                    callback.onFailure(new Exception("Exception while trying to parse node response. Message: " + response.error.message), null);
                 mCallbackMap.remove(response.id);
             }
 
