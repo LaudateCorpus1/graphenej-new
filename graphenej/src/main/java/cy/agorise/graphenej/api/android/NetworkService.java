@@ -1,5 +1,7 @@
 package cy.agorise.graphenej.api.android;
 
+import android.util.SparseArray;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -22,6 +24,7 @@ import cy.agorise.graphenej.RPC;
 import cy.agorise.graphenej.Transaction;
 import cy.agorise.graphenej.UserAccount;
 import cy.agorise.graphenej.api.ApiAccess;
+import cy.agorise.graphenej.api.ApiCallback;
 import cy.agorise.graphenej.api.ConnectionStatusUpdate;
 import cy.agorise.graphenej.api.calls.ApiCallable;
 import cy.agorise.graphenej.api.calls.GetAccountBalances;
@@ -116,6 +119,8 @@ public class NetworkService {
     private FullNode mSelectedNode;
 
     private CompositeDisposable mCompositeDisposable;
+
+    private HashMap<Long, ApiCallback> mCallbackMap = new HashMap<Long, ApiCallback>();
 
     private Gson gson = new GsonBuilder()
             .registerTypeAdapter(Transaction.class, new Transaction.TransactionDeserializer())
@@ -228,6 +233,18 @@ public class NetworkService {
         return -1;
     }
 
+    public synchronized long sendMessage(ApiCallable apiCallable, int requiredApi, ApiCallback callback){
+        long id = this.sendMessage(apiCallable, requiredApi);
+        if(callback != null){
+            if(id != -1){
+                mCallbackMap.put(id, callback);
+            }else{
+                callback.onFailure(new Exception("Message could not be sent"), null);
+            }
+        }
+        return id;
+    }
+
     /**
      * Method used to inform any external party a clue about the current connectivity status
      * @return  True if the service is currently connected and logged in, false otherwise.
@@ -247,6 +264,7 @@ public class NetworkService {
             nodeLatencyVerifier.stop();
 
         mCompositeDisposable.dispose();
+        mCallbackMap.clear();
     }
 
     /**
@@ -303,6 +321,7 @@ public class NetworkService {
             FullNode fullNode = nodeProvider.getBestNode();
             if(fullNode != null){
                 System.out.println(String.format(Locale.ROOT, "Connected with %d latency results", latencyUpdateCounter));
+                mApiIds.clear();
                 connect();
             }else{
                 Disposable d = Observable.timer(DEFAULT_INITIAL_DELAY, TimeUnit.MILLISECONDS).subscribe(this);
@@ -333,6 +352,21 @@ public class NetworkService {
         @Override
         public void onComplete() { }
     };
+
+    /**
+     * Method used to execute every callback failure method and remove them from the SparseArray.
+     *
+     * @param throwable
+     * @param response
+     */
+    private void resetCallbacks(Throwable throwable, Response response){
+        for(ApiCallback callback : mCallbackMap.values()) {
+            if(callback != null) {
+                callback.onFailure(throwable, response);
+                mCallbackMap.remove(callback);
+            }
+        }
+    }
 
     private WebSocketListener mWebSocketListener = new WebSocketListener() {
 
@@ -448,6 +482,7 @@ public class NetworkService {
          */
         private void handleJsonRpcResponse(JsonRpcResponse response, String text){
             JsonRpcResponse parsedResponse = null;
+
             Class requestClass = mRequestClassMap.get(response.id);
             if(requestClass != null){
                 // Removing the class entry in the map
@@ -526,6 +561,17 @@ public class NetworkService {
             if(parsedResponse == null){
                 parsedResponse = response;
             }
+
+            // Executing callback, if present with the parsed response
+            if(mCallbackMap.containsKey(response.id)){
+                ApiCallback callback = mCallbackMap.get(response.id);
+                if(response.error == null)
+                    callback.onResponse(parsedResponse, text);
+                else
+                    callback.onFailure(new Exception("Exception while trying to parse node response. Message: " + response.error.message), null);
+                mCallbackMap.remove(response.id);
+            }
+
             // Broadcasting the parsed response to all interested listeners
             RxBus.getBusInstance().send(parsedResponse);
         }
@@ -589,6 +635,7 @@ public class NetworkService {
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
             super.onClosed(webSocket, code, reason);
+            resetCallbacks(new Exception("Websocket closed. Reason: " + reason), null);
             if(code == GOING_AWAY_STATUS)
                 handleWebSocketDisconnection(true, false);
             else
@@ -598,6 +645,7 @@ public class NetworkService {
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             super.onFailure(webSocket, t, response);
+            resetCallbacks(t, response);
             System.out.println("onFailure. Exception: "+t.getClass().getName()+", Msg: "+t.getMessage());
             // Logging error stack trace
             for(StackTraceElement element : t.getStackTrace()){

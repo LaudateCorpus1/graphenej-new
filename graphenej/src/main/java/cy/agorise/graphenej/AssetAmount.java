@@ -27,7 +27,7 @@ import cy.agorise.graphenej.interfaces.JsonSerializable;
 /**
  * Class used to represent a specific amount of a certain asset
  */
-public class AssetAmount implements ByteSerializable, JsonSerializable {
+public class AssetAmount implements ByteSerializable, JsonSerializable, Comparable<AssetAmount> {
     /**
      * Constants used in the JSON serialization procedure.
      */
@@ -194,6 +194,14 @@ public class AssetAmount implements ByteSerializable, JsonSerializable {
     @Override
     public String toString() {
         return String.format("(asset=%s, amount=%s)", asset.getObjectId(), amount.toString(10));
+    }
+
+    @Override
+    public int compareTo(AssetAmount other) {
+        if(!other.asset.equals(this.asset)) throw new AssertionError("Cannot compare amounts of different assets");
+        if(this.amount == null) throw new NullPointerException("Asset amount field is null");
+        if(other.amount == null) throw new NullPointerException("Asser amount field is null");
+        return amount.compareTo(other.amount);
     }
 
     /**
