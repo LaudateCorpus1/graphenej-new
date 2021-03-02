@@ -1,15 +1,4 @@
-apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'com.android.library'
-
-publish {
-    userOrg = 'bilthon'
-    groupId = 'cy.agorise.graphenej'
-    artifactId = 'graphenej'
-    publishVersion = '0.6.0'
-    repoName = 'Graphenej'
-    desc = 'A Java library for mobile app Developers; Graphene/Bitshares blockchain.'
-    website = 'https://github.com/Agorise/graphenej'
-}
 
 android {
     compileSdkVersion 28
