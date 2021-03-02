@@ -10,17 +10,9 @@ android {
         versionName "0.6.0"
         vectorDrawables.useSupportLibrary = true
     }
-    buildTypes {
-        debug{}
-        preRelease{}
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
-        }
-    }
+
     defaultConfig {
         multiDexEnabled true
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 }
 
