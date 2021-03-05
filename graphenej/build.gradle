@@ -1,11 +1,11 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 28
+        targetSdkVersion 29
         versionCode 12
         versionName "0.6.0"
         vectorDrawables.useSupportLibrary = true
@@ -20,16 +20,16 @@ dependencies {
     testImplementation group: 'junit', name: 'junit', version: '4.12'
     implementation 'com.neovisionaries:nv-websocket-client:1.30'
     implementation 'org.bitcoinj:bitcoinj-core:0.14.3'
-    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'org.tukaani:xz:1.6'
+
+    //  Rx dependencies
+    api 'io.reactivex.rxjava2:rxandroid:2.1.1'
+    api 'io.reactivex.rxjava2:rxjava:2.2.10'
+    api 'com.jakewharton.rxrelay2:rxrelay:2.1.0'
+    api 'com.squareup.okhttp3:okhttp:4.2.0'
 
     androidTestImplementation 'com.android.support:support-annotations:28.0.0'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test:rules:1.0.2'
-
-    //  Rx dependencies
-    api 'io.reactivex.rxjava2:rxandroid:2.1.0'
-    api 'io.reactivex.rxjava2:rxjava:2.2.2'
-    api 'com.jakewharton.rxrelay2:rxrelay:2.1.0'
-    api 'com.squareup.okhttp3:okhttp:3.12.2'
 }
